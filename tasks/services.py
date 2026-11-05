@@ -15,3 +15,13 @@ def assign_worker_to_task(task: Task, worker: Worker) -> TaskAssignment:
         return task_assignment
     else:
         raise ValidationError("Worker is in another team")
+
+
+def remove_worker_from_task(task: Task, worker: Worker) -> None:
+    task_assignment = TaskAssignment.objects.filter(
+        task_id=task.id, worker_id=worker.id
+    )
+    if task_assignment:
+        task_assignment.delete()
+    else:
+        raise ValidationError("This worker is not assigned to this task")
