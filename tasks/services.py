@@ -39,3 +39,12 @@ def calculate_task_completion(task: Task) -> bool:
                 return False
         return True
     return False
+
+
+def refresh_task_completion(task: Task) -> bool:
+    task_completion = calculate_task_completion(task=task)
+    if task.is_completed != task_completion:
+        task.is_completed = task_completion
+        task.save()
+        return True
+    return False
