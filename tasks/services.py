@@ -48,3 +48,18 @@ def refresh_task_completion(task: Task) -> bool:
         task.save()
         return True
     return False
+
+
+def propagate_task_completion(task: Task) -> None:
+    tasks_list = [task]
+    while True:
+        if not tasks_list:
+            break
+        if refresh_task_completion(task=tasks_list[0]):
+            for task_id_for_check in (
+                TaskDependency.objects.filter(
+                    prerequisite_task=tasks_list[0].id
+                ).values_list("dependent_task", flat=True)
+            ):
+                tasks_list.append(Task.objects.get(pk=task_id_for_check))
+        del tasks_list[0]
