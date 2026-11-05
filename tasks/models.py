@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.constraints import UniqueConstraint
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 from projects.models import Project
 
@@ -65,3 +66,15 @@ class TaskAssignment(models.Model):
                 fields=["task", "worker"], name="unique_worker_per_task"
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if self.task_id and self.worker_id:
+            if self.task.project.team.members.filter(pk=self.worker_id).exists():
+                return
+            else:
+                raise ValidationError(
+                    {
+                     "worker": "This worker is not a member of the project's team"
+                    }
+                )
