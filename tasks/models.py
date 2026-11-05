@@ -13,6 +13,13 @@ class TaskType(models.Model):
         return self.name
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=55, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Task(models.Model):
     name = models.CharField(max_length=55)
     description = models.CharField(max_length=455, blank=True)
@@ -20,6 +27,11 @@ class Task(models.Model):
         TaskType,
         on_delete=models.PROTECT,
         related_name="tasks",
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        related_name="tasks",
+        blank=True
     )
     project = models.ForeignKey(
         Project,
