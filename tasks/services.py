@@ -12,6 +12,7 @@ def assign_worker_to_task(task: Task, worker: Worker) -> TaskAssignment:
             worker=worker,
         )
         task_assignment.save()
+        propagate_task_completion(task=task)
         return task_assignment
     else:
         raise ValidationError("Worker is in another team")
@@ -23,6 +24,7 @@ def remove_worker_from_task(task: Task, worker: Worker) -> None:
     )
     if task_assignment:
         task_assignment.delete()
+        propagate_task_completion(task=task)
     else:
         raise ValidationError("This worker is not assigned to this task")
 
@@ -42,6 +44,7 @@ def calculate_task_completion(task: Task) -> bool:
 
 
 def refresh_task_completion(task: Task) -> bool:
+    task.refresh_from_db()
     task_completion = calculate_task_completion(task=task)
     if task.is_completed != task_completion:
         task.is_completed = task_completion
