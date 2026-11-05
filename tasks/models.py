@@ -91,6 +91,9 @@ class TaskAssignment(models.Model):
                     }
                 )
 
+    def __str__(self):
+        return f"{self.worker}'s task: {self.task}"
+
 
 class TaskDependency(models.Model):
     dependent_task = models.ForeignKey(
