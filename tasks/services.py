@@ -63,3 +63,15 @@ def propagate_task_completion(task: Task) -> None:
             ):
                 tasks_list.append(Task.objects.get(pk=task_id_for_check))
         del tasks_list[0]
+
+
+def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) -> None:
+    try:
+        task_assignment = TaskAssignment.objects.get(
+        task_id=task.id, worker_id=worker.id
+    )
+        task_assignment.is_completed = is_completed
+        task_assignment.save()
+        propagate_task_completion(task=task)
+    except TaskAssignment.DoesNotExist:
+        raise ValidationError("This worker is not assigned to this task")
