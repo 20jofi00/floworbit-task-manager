@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from accounts.models import Worker
 from tasks.models import Task, TaskAssignment, TaskDependency
@@ -78,3 +79,13 @@ def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) ->
         propagate_task_completion(task=task)
     except TaskAssignment.DoesNotExist:
         raise ValidationError("This worker is not assigned to this task")
+
+
+@transaction.atomic
+def add_task_dependency(dependent_task: Task, prerequisite_task: Task) -> None:
+    task_dependency = TaskDependency(
+        dependent_task=dependent_task,
+        prerequisite_task=prerequisite_task,
+    )
+    task_dependency.save()
+    propagate_task_completion(task=dependent_task)
