@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from tasks.models import Task, TaskType
+from tasks.models import Task, TaskAssignment, TaskType
 
 
 admin.site.register(TaskType)
@@ -10,3 +10,5 @@ admin.site.register(TaskType)
 class TaskAdmin(admin.ModelAdmin):
     readonly_fields = ("is_completed",)
     list_display = admin.ModelAdmin.list_display + ("name", "project", "task_type", "priority", "deadline", "is_completed")
+
+admin.site.register(TaskAssignment)
