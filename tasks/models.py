@@ -90,3 +90,27 @@ class TaskAssignment(models.Model):
                      "worker": "This worker is not a member of the project's team"
                     }
                 )
+
+
+class TaskDependency(models.Model):
+    dependent_task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="dependency_links",
+    )
+    prerequisite_task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="blocking_links",
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["dependent_task", "prerequisite_task"],
+                name="unique_dependent_task_per_prerequisite_task",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.dependent_task} depends on {self.prerequisite_task}"
