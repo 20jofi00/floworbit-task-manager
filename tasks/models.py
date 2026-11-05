@@ -91,6 +91,10 @@ class TaskAssignment(models.Model):
                     }
                 )
 
+    def save(self, **kwargs):
+        self.full_clean()
+        return super().save(**kwargs)
+
     def __str__(self):
         return f"{self.worker}'s task: {self.task}"
 
@@ -140,6 +144,10 @@ class TaskDependency(models.Model):
                     raise ValidationError("Tasks need to be in one project")
             else:
                 raise ValidationError("Tasks need to be different")
+
+    def save(self, **kwargs):
+        self.full_clean()
+        return super().save(**kwargs)
 
     def __str__(self):
         return f"{self.dependent_task} depends on {self.prerequisite_task}"
