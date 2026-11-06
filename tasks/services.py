@@ -89,3 +89,15 @@ def add_task_dependency(dependent_task: Task, prerequisite_task: Task) -> None:
     )
     task_dependency.save()
     propagate_task_completion(task=dependent_task)
+
+
+@transaction.atomic
+def delete_task_dependency(dependent_task: Task, prerequisite_task: Task) -> None:
+    task_dependency = TaskDependency.objects.filter(
+        dependent_task=dependent_task, prerequisite_task=prerequisite_task
+    )
+    if task_dependency:
+        task_dependency.delete()
+        propagate_task_completion(task=dependent_task)
+    else:
+        raise ValidationError("This task dependency does not exist")
