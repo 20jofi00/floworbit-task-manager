@@ -1,5 +1,3 @@
-from encodings.punycode import T
-
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -106,14 +104,6 @@ def delete_task_dependency(dependent_task: Task, prerequisite_task: Task) -> Non
     else:
         raise ValidationError("This task dependency does not exist")
 
-
-def remove_worker_from_team(worker: Worker, team: Team) -> None:
-    if worker.teams.filter(pk=team.id).exists():
-        if TaskAssignment.objects.filter(worker_id=worker.id, task__project__team_id=team.id).exists():
-            raise ValidationError("This worker has task in this team")
-        team.members.remove(worker)
-    else:
-        raise ValidationError("This worker is not a member of this team")
 
 def task_change_project(task: Task, project: Project) -> None:
     task.refresh_from_db()
