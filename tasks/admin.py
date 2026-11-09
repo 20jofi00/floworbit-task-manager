@@ -6,7 +6,7 @@ from tasks.services import propagate_task_completion
 
 
 admin.site.register(TaskType)
-
+admin.site.register(Tag)
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
@@ -35,5 +35,14 @@ class TaskAssignmentAdmin(admin.ModelAdmin):
         propagate_task_completion(obj.task)
 
 
-admin.site.register(Tag)
-admin.site.register(TaskDependency)
+@admin.register(TaskDependency)
+class TaskDependencyAdmin(admin.ModelAdmin):
+    def get_readonly_fields(self, request, obj = None):
+        if obj is None:
+            return super().get_readonly_fields(request, obj)
+        read_only_fields = super().get_readonly_fields(request, obj)
+        return read_only_fields + ("dependent_task", "prerequisite_task")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        propagate_task_completion(obj.dependent_task)
