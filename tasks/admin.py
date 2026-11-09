@@ -18,6 +18,7 @@ class TaskAdmin(admin.ModelAdmin):
 @admin.register(TaskAssignment)
 class TaskAssignmentAdmin(admin.ModelAdmin):
     list_display = admin.ModelAdmin.list_display + ("task", "worker", "is_completed")
+    actions = None
 
     def get_readonly_fields(self, request, obj = None):
         if obj is None:
