@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from tasks.forms import TaskAdminForm
 from tasks.models import Tag, Task, TaskAssignment, TaskDependency, TaskType
+from tasks.services import propagate_task_completion
 
 
 admin.site.register(TaskType)
@@ -14,6 +15,20 @@ class TaskAdmin(admin.ModelAdmin):
     list_display = admin.ModelAdmin.list_display + ("name", "project", "task_type", "priority", "deadline", "is_completed")
 
 
-admin.site.register(TaskAssignment)
+@admin.register(TaskAssignment)
+class TaskAssignmentAdmin(admin.ModelAdmin):
+    list_display = admin.ModelAdmin.list_display + ("task", "worker", "is_completed")
+
+    def get_readonly_fields(self, request, obj = None):
+        if obj is None:
+            return super().get_readonly_fields(request, obj)
+        read_only_fields = super().get_readonly_fields(request, obj)
+        return read_only_fields + ("task", "worker")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        propagate_task_completion(obj.task)
+
+
 admin.site.register(Tag)
 admin.site.register(TaskDependency)
