@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>
+    Team details
+  </h1>
+
+  <p><strong>Name:</strong> {{ team.name }}</p>
+  {% if team.description %}
+    <p><strong>Description:</strong> {{ team.description }}</p>
+  {% endif %}
+
+  <div class="ms-3">
+    <h4>Members</h4>
+
+    {% for member in team.members.all %}
+        <hr>
+        <p><strong>Full name:</strong>
+          {% if member.first_name and member.last_name %}
+            {{ member.first_name }} {{ member.last_name }}
+          {% else %}
+            {% if member.first_name or member.last_name %}
+              {% if member.first_name %}
+                {{ member.first_name }}
+              {% else %}
+                {{ member.last_name }}
+              {% endif %}
+            {% else %}
+              {% if member.username %}
+                {{ member.username }}
+              {% else %}
+                Unknown member
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        </p>
+        {% if member.position %}
+          <p><strong>Position:</strong> {{ member.position }}</p>
+        {% else %}
+         Member has no position
+        {% endif %}
+    {% empty %}
+      <p>No members!</p>
+    {% endfor %}
+  </div>
+  <form action="{% url 'teams:team-list' %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Return">
+  </form>
+{% endblock %}
