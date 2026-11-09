@@ -1,7 +1,9 @@
 from django.core.exceptions import ValidationError
 
+from accounts.models import Worker
 from projects.models import Project
 from teams.models import Team
+from teams.service import require_team_member
 
 
 def move_project_to_team(team: Team, project: Project) -> None:
@@ -13,3 +15,9 @@ def move_project_to_team(team: Team, project: Project) -> None:
         raise ValidationError("This team already has a project with this name")
     project.team = team
     project.save()
+
+
+def require_project_access(worker: Worker, project: Project) -> None:
+    require_team_member(
+        worker=worker, team=project.team
+    )
