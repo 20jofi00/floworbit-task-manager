@@ -37,6 +37,9 @@ class TaskAssignmentAdmin(admin.ModelAdmin):
 
 @admin.register(TaskDependency)
 class TaskDependencyAdmin(admin.ModelAdmin):
+    list_display = admin.ModelAdmin.list_display + ("dependent_task", "prerequisite_task")
+    actions = None
+
     def get_readonly_fields(self, request, obj = None):
         if obj is None:
             return super().get_readonly_fields(request, obj)
