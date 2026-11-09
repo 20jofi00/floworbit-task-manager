@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 
 from accounts.models import Worker
 from tasks.models import TaskAssignment
@@ -14,3 +14,8 @@ def remove_worker_from_team(worker: Worker, team: Team) -> None:
         team.members.remove(worker)
     else:
         raise ValidationError("This worker is not a member of this team")
+
+
+def require_team_member(worker: Worker, team: Team) -> None:
+    if not team.members.filter(pk=worker.id).exists():
+        raise PermissionDenied("You are not a member of this team")
