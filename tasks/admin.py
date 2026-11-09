@@ -46,3 +46,7 @@ class TaskDependencyAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         propagate_task_completion(obj.dependent_task)
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        propagate_task_completion(obj.dependent_task)
