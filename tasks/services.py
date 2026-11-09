@@ -33,8 +33,10 @@ def remove_worker_from_task(task: Task, worker: Worker) -> None:
 
 
 def calculate_task_completion(task: Task) -> bool:
-    if TaskAssignment.objects.filter(task_id=task.id):
-        tasks_dependency = TaskDependency.objects.filter(dependent_task_id=task.id)
+    if TaskAssignment.objects.filter(task_id=task.id).exists():
+        tasks_dependency = TaskDependency.objects.filter(
+            dependent_task_id=task.id
+        )
         for task_dependency in tasks_dependency:
             if not task_dependency.prerequisite_task.is_completed:
                 return False
@@ -128,3 +130,17 @@ def require_task_edit_access(worker: Worker, task: Task) -> None:
         worker=worker,
         project=task.project,
     )
+
+
+def get_task_display_state(task: Task) -> str:
+    tasks_dependency = TaskDependency.objects.filter(
+        dependent_task_id=task.id
+    )
+    for task_dependency in tasks_dependency:
+        if not task_dependency.prerequisite_task.is_completed:
+            return "blocked"
+    if task.is_completed:
+        return "completed"
+    if TaskAssignment.objects.filter(task_id=task.id).exists():
+        return "in_progress"
+    return "unassigned"
