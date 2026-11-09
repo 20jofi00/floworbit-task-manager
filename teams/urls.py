@@ -1,10 +1,11 @@
 from django.urls import path
 
-from teams.views import team_selection
-
+from teams.views import (
+    TeamListView,
+)
 
 app_name = "teams"
 
 urlpatterns = [
-    path("", team_selection, name="team_selection"),
+    path("", TeamListView.as_view(), name="team-list"),
 ]
