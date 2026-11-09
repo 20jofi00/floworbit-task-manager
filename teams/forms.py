@@ -29,3 +29,12 @@ class TeamAdminForm(forms.ModelForm):
                     "Remove this worker from the team's tasks before removing them from the team"
                 )
         return new_members
+
+
+class TeamSearchForm(forms.Form):
+    name = forms.CharField(
+        max_length=155,
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
