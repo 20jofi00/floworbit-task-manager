@@ -13,7 +13,12 @@
     <ul>
       {% for team in team_list %}
         <li>
-          {{ team.name }} {{ team.description }}
+          <a href="{% url 'teams:team-detail' pk=team.id %}">
+            {{ team.name }}
+          </a>
+          {% if team.description %}
+            {{ team.description }}
+          {% endif %}
         </li>
       {% endfor %}
     </ul>

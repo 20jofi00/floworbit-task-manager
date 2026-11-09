@@ -22,3 +22,13 @@ class TeamListView(LoginRequiredMixin, generic.ListView):
                 name__icontains=self.search_form.cleaned_data["name"]
             )
         return queryset
+
+
+class TeamDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Team
+
+    def get_queryset(self):
+        queryset = Team.objects.filter(
+            members__id=self.request.user.id
+        ).prefetch_related("members__position")
+        return queryset
