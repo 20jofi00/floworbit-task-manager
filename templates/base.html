@@ -17,7 +17,17 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      {% block content %}{% endblock %}
+      {% if user.is_authenticated %}
+        <div class="col-sm-2">
+          {% block sidebar %}
+            {% include "includes/sidebar.html" %}
+          {% endblock %}
+        </div>
+      {% endif %}
+        <div class="{% if user.is_authenticated %} col-sm-10
+        {% else %} col-sm-12 {% endif %}">
+          {% block content %}{% endblock %}
+        </div>
     </div>
   </div>
 </body>
