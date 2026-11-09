@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+  <h1>
+    Team list
+  </h1>
+  <form action="" method="get" class="form-inline">
+    {{ search_form|crispy}}
+    <input type="submit" value="🔍" class="btn btn-secondary">
+  </form>
+  {% if team_list %}
+    <ul>
+      {% for team in team_list %}
+        <li>
+          {{ team.name }} {{ team.description }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No teams found</p>
+  {% endif %}
+{% endblock %}
