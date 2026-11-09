@@ -29,6 +29,10 @@ class TaskAssignmentAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         propagate_task_completion(obj.task)
 
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        propagate_task_completion(obj.task)
+
 
 admin.site.register(Tag)
 admin.site.register(TaskDependency)
