@@ -1,0 +1,14 @@
+<h1>FlowOrbit</h1>
+<ul class="sidebar-nav list-group">
+  <li class="list-group-item"> User: {{ user.get_username }}</li>
+  <li class="list-group-item">
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <input class="btn btn-danger" type="submit" value="Logout">
+    </form>
+  </li>
+
+  <li class="list-group-item">
+    <a href="{% url 'teams:team_selection' %}">Home</a>
+  </li>
+</ul>
