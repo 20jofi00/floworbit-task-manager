@@ -119,3 +119,5 @@ MAILERS = {
 # Else
 
 AUTH_USER_MODEL = "accounts.Worker"
+
+LOGIN_REDIRECT_URL = "/"
