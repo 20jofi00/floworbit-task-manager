@@ -3,6 +3,7 @@ from django.db import transaction
 
 from accounts.models import Worker
 from projects.models import Project
+from projects.service import require_project_access
 from tasks.models import Task, TaskAssignment, TaskDependency
 
 
@@ -120,3 +121,10 @@ def task_change_project(task: Task, project: Project) -> None:
         )
     task.project = project
     task.save()
+
+
+def require_task_edit_access(worker: Worker, task: Task) -> None:
+    require_project_access(
+        worker=worker,
+        project=task.project,
+    )
