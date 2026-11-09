@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     "teams",
     "projects",
     "tasks",
+    "crispy_forms",
+    "crispy_bootstrap5",
 ]
 
 MIDDLEWARE = [
@@ -100,8 +102,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Email
 
