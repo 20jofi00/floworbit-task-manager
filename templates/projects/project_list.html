@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+  <h1>
+    {{ team.name }} project list
+  </h1>
+  <form action="" method="get" class="form-inline">
+    {{ search_form|crispy}}
+    <input type="submit" value="🔍" class="btn btn-secondary">
+  </form>
+  {% if project_list %}
+    <ul>
+      {% for project in project_list %}
+        <li>
+          {{ project.name }}
+          {% if project.description %}
+            {{ project.description }}
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No projects found</p>
+  {% endif %}
+{% endblock %}
