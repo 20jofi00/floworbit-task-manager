@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>
+    Project details
+  </h1>
+
+  <p><strong>Name:</strong> {{ project.name }}</p>
+  {% if project.description %}
+    <p><strong>Description:</strong> {{ project.description }}</p>
+  {% endif %}
+
+  <div class="ms-3">
+    <h4>Team</h4>
+    <hr>
+      <p><strong>Name:</strong>
+        {{ project.team.name }}
+      </p>
+  </div>
+  <form action="{% url 'projects:project-list' team_pk=project.team.id %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Return">
+  </form>
+{% endblock %}
