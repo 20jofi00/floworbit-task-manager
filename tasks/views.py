@@ -5,17 +5,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from projects.models import Project
 from tasks.forms import TaskSearchForm
-from tasks.models import Task
+from tasks.models import Task, TaskAssignment
 from tasks.services import get_task_display_state
 from teams.models import Team
 
 
-class TasksListView(LoginRequiredMixin, generic.ListView):
+class TaskListView(LoginRequiredMixin, generic.ListView):
     model = Task
     paginate_by = 10
 
     def get_context_data(self, **kwargs):
-        context = super(TasksListView, self).get_context_data(**kwargs)
+        context = super(TaskListView, self).get_context_data(**kwargs)
         context["search_form"] = self.search_form
         context["team"] = self.team
         for task in context["task_list"]:
@@ -37,3 +37,12 @@ class TasksListView(LoginRequiredMixin, generic.ListView):
                 name__icontains=self.search_form.cleaned_data["name"]
             )
         return queryset
+
+
+class TaskDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Task
+
+    def get_context_data(self, **kwargs):
+        context = super(TaskDetailView, self).get_context_data(**kwargs)
+        context["workers"] = TaskAssignment.objects.filter(task=self.instance)
+        return context

@@ -46,6 +46,9 @@
   <form action="{% url 'projects:project-list' team_pk=team.id%}" method="get" class="form-inline">
     <input type="submit" value="Projects" class="btn btn-secondary">
   </form>
+    <form action="{% url 'tasks:task-list' team_pk=team.id %}" method="get" class="form-inline">
+    <input type="submit" value="Tasks" class="btn btn-secondary">
+  </form>
   <form class="form-inline" action="{% url 'teams:team-list' %}" method="get">
     <input class="btn btn-primary" type="submit" value="Return">
   </form>
