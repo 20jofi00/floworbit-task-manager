@@ -33,3 +33,22 @@ class ProjectSearchForm(forms.Form):
         label="",
         widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
     )
+
+
+class TeamProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ("name", "description")
+
+    def __init__(self, *args, **kwargs):
+        if "team" not in kwargs:
+            raise TypeError(
+                "You need to add team"
+            )
+        self.team = kwargs.pop("team")
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        if self.team.projects.filter(name=self.cleaned_data.get("name")).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Have project with this name")
+        return self.cleaned_data.get("name")
