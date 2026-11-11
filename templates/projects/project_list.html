@@ -9,6 +9,9 @@
     {{ search_form|crispy}}
     <input type="submit" value="🔍" class="btn btn-secondary">
   </form>
+  <a href="{% url 'projects:project-create' team_pk=team.id %}" class="btn btn-primary link-to-page">
+    Create
+  </a>
   {% if project_list %}
     <ul>
       {% for project in project_list %}

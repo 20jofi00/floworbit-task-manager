@@ -1,8 +1,9 @@
+from django.urls import reverse
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from projects.forms import ProjectSearchForm
+from projects.forms import ProjectSearchForm, TeamProjectForm
 from projects.models import Project
 from teams.models import Team
 
@@ -46,7 +47,7 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
         context["num_completed_tasks"] = self.object.tasks.filter(
             is_completed=True
         ).count()
-        
+
         context["percent_of_completed_tasks"] = round(
             context["num_completed_tasks"] /
             context["num_tasks"] * 100,
@@ -61,3 +62,19 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
             members__id=self.request.user.id,
         )
         return Project.objects.filter(team=team)
+
+
+class ProjectCreateView(LoginRequiredMixin, generic.CreateView):
+    model = Project
+    form_class = TeamProjectForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        self.team = get_object_or_404(Team, pk=self.kwargs["team_pk"], members=self.request.user.id)
+        kwargs["team"] = self.team
+        return kwargs
+
+    def get_success_url(self):
+        return reverse("projects:project-list", kwargs={
+            "team_pk": self.team.id
+        })
