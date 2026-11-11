@@ -49,9 +49,7 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
         ).count()
 
         context["percent_of_completed_tasks"] = round(
-            context["num_completed_tasks"] /
-            context["num_tasks"] * 100,
-            2
+            context["num_completed_tasks"] / context["num_tasks"] * 100, 2
         )
         return context
 
@@ -70,11 +68,37 @@ class ProjectCreateView(LoginRequiredMixin, generic.CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        self.team = get_object_or_404(Team, pk=self.kwargs["team_pk"], members=self.request.user.id)
+        self.team = get_object_or_404(
+            Team,
+            pk=self.kwargs["team_pk"],
+            members=self.request.user.id,
+        )
         kwargs["team"] = self.team
         return kwargs
 
     def get_success_url(self):
-        return reverse("projects:project-list", kwargs={
-            "team_pk": self.team.id
-        })
+        return reverse("projects:project-list", kwargs={"team_pk": self.team.id})
+
+
+class ProjectUpdateView(LoginRequiredMixin, generic.UpdateView):
+    model = Project
+    form_class = TeamProjectForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["team"] = self.team
+        return kwargs
+
+    def get_queryset(self):
+        self.team = get_object_or_404(
+            Team,
+            pk=self.kwargs["team_pk"],
+            members=self.request.user.id,
+        )
+        return Project.objects.filter(team=self.team)
+
+    def get_success_url(self):
+        return reverse(
+            "projects:project-detail",
+            kwargs={"team_pk": self.team.id, "pk": self.object.pk},
+        )
