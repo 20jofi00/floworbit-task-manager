@@ -13,7 +13,9 @@
     <ul>
       {% for project in project_list %}
         <li>
-          {{ project.name }}
+          <a href="{% url 'projects:project-detail' team_pk=team.id pk=project.id %}">
+            {{ project.name }}
+          </a>
           {% if project.description %}
             {{ project.description }}
           {% endif %}
