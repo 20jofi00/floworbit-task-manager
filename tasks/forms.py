@@ -7,7 +7,15 @@ from tasks.models import Task, TaskDependency
 class TaskAdminForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ("name", "description", "task_type", "tags", "project", "deadline", "priority")
+        fields = (
+            "name",
+            "description",
+            "task_type",
+            "tags",
+            "project",
+            "deadline",
+            "priority",
+        )
 
     def clean_project(self):
         new_project = self.cleaned_data.get("project")
@@ -17,13 +25,23 @@ class TaskAdminForm(forms.ModelForm):
             raise ValidationError(
                 "A task can only be moved between projects of the same team"
             )
-        if TaskDependency.objects.filter(
-            dependent_task_id=self.instance.pk
-        ).exists() or TaskDependency.objects.filter(
-            prerequisite_task_id=self.instance.pk
-        ).exists():
+        if (
+            TaskDependency.objects.filter(dependent_task_id=self.instance.pk).exists()
+            or TaskDependency.objects.filter(
+                prerequisite_task_id=self.instance.pk
+            ).exists()
+        ):
             raise ValidationError(
                 "Remove all dependencies involving this task before moving it"
             )
 
         return new_project
+
+
+class TaskSearchForm(forms.Form):
+    name = forms.CharField(
+        max_length=55,
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
