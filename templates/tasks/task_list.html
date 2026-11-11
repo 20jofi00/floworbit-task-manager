@@ -12,7 +12,6 @@
     <table class="table">
       <tr>
         <th>Name</th>
-        <th>Description</th>
         <th>Type</th>
         <th>Project</th>
         <th>Tags</th>
@@ -24,11 +23,9 @@
     {% for task in task_list %}
       <tr>
         <td>
-          {{ task.name }}
-        </td>
-        <td>
-          {{ task.description }}
-        </td>
+          <a href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">
+            {{ task.name }}
+          </a>        </td>
         <td>
           {{ task.task_type.name }}
         </td>

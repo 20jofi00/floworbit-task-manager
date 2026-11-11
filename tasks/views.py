@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from projects.models import Project
 from tasks.forms import TaskSearchForm
-from tasks.models import Task, TaskAssignment
+from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import get_task_display_state
 from teams.models import Team
 
@@ -44,5 +44,17 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(TaskDetailView, self).get_context_data(**kwargs)
-        context["workers"] = TaskAssignment.objects.filter(task=self.instance)
+        prerequisite_ids = TaskDependency.objects.filter(
+            dependent_task=self.object
+        ).values_list("prerequisite_task", flat=True)
+        context["prerequisite_tasks"] = Task.objects.filter(id__in=prerequisite_ids)
+        self.object.state = get_task_display_state(task=self.object)
         return context
+
+    def get_queryset(self):
+        self.team = get_object_or_404(
+            Team,
+            pk=self.kwargs.get("team_pk"),
+            members=self.request.user.id,
+        )
+        return Task.objects.filter(project__team=self.team).order_by("-deadline", "pk")
