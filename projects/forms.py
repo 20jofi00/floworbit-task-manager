@@ -47,6 +47,7 @@ class TeamProjectForm(forms.ModelForm):
             )
         self.team = kwargs.pop("team")
         super().__init__(*args, **kwargs)
+        self.instance.team = self.team
 
     def clean_name(self):
         if self.team.projects.filter(name=self.cleaned_data.get("name")).exclude(pk=self.instance.pk).exists():
