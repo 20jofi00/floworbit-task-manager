@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>
+    Task details
+  </h1>
+
+  <p><strong>Name:</strong> {{ task.name }}</p>
+  {% if task.description %}
+    <p><strong>Description:</strong> {{ task.description }}</p>
+  {% endif %}
+  <p><strong>Type:</strong> {{ task.task_type }}</p>
+  <p><strong>Project:</strong> {{ task.project }}</p>
+  <p><strong>Tags:</strong></p>
+    {% for tag in task.tags.all %}
+      {{ tag }}
+    {% empty %}
+      No tags
+    {% endfor %}
+  <p><strong>Deadline:</strong> {{ task.deadline }}</p>
+  <p><strong>Priority:</strong> {{ task.priority }}</p>
+  <p><strong>Status:</strong> {{ task.state }}</p>
+  <p><strong>Depends on:</strong></p>
+    {% for prerequisite_task in prerequisite_tasks %}
+      {{ prerequisite_task.name }} - {{ prerequisite_task.task_type }}, project - {{ prerequisite_task.project }}
+    {% empty %}
+      Task has no dependency
+    {% endfor %}  
+
+  <form class="form-inline" action="{% url 'tasks:task-list' team_pk=task.project.team.id %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Return">
+  </form>
+{% endblock %}
