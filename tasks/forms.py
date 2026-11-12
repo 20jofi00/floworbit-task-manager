@@ -1,10 +1,11 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
+from projects.models import Project
 from tasks.models import Task, TaskDependency
 
 
-class TaskAdminForm(forms.ModelForm):
+class TaskModelForm(forms.ModelForm):
     class Meta:
         model = Task
         fields = (
@@ -19,9 +20,12 @@ class TaskAdminForm(forms.ModelForm):
 
     def clean_project(self):
         new_project = self.cleaned_data.get("project")
-        if not self.instance.pk or self.instance.project_id == new_project.pk:
+        if not self.instance.pk or self.instance.project.id == new_project.pk:
             return new_project
-        if not new_project.team.id == self.instance.project.team.id:
+        if (
+            new_project != self.instance.project
+            and not new_project.team.id == self.instance.project.team.id
+        ):
             raise ValidationError(
                 "A task can only be moved between projects of the same team"
             )
@@ -36,6 +40,20 @@ class TaskAdminForm(forms.ModelForm):
             )
 
         return new_project
+
+
+class TaskAdminForm(TaskModelForm):
+    pass
+
+
+class TaskForm(TaskModelForm):
+
+    def __init__(self, *args, **kwargs):
+        if "team" not in kwargs:
+            raise TypeError("You need to add team")
+        self.team = kwargs.pop("team")
+        super().__init__(*args, **kwargs)
+        self.fields["project"].queryset = Project.objects.filter(team=self.team)
 
 
 class TaskSearchForm(forms.Form):
