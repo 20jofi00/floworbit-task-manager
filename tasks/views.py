@@ -1,9 +1,7 @@
-from django import forms
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from projects.models import Project
 from tasks.forms import TaskSearchForm
 from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import get_task_display_state
@@ -48,7 +46,9 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
             dependent_task=self.object
         ).values_list("prerequisite_task", flat=True)
         context["prerequisite_tasks"] = Task.objects.filter(id__in=prerequisite_ids)
+        context["task"] = self.object
         self.object.state = get_task_display_state(task=self.object)
+        context["assignments"] = TaskAssignment.objects.filter(task=self.object)
         return context
 
     def get_queryset(self):
