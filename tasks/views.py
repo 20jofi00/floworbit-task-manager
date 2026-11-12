@@ -1,8 +1,10 @@
+from django.urls import reverse
 from django.views import generic
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from tasks.forms import TaskSearchForm
+from projects.models import Project
+from tasks.forms import TaskForm, TaskSearchForm
 from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import get_task_display_state
 from teams.models import Team
@@ -58,3 +60,28 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
             members=self.request.user.id,
         )
         return Task.objects.filter(project__team=self.team).order_by("-deadline", "pk")
+
+
+class TaskCreateView(LoginRequiredMixin, generic.CreateView):
+    model = Task
+    form_class = TaskForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        self.project = get_object_or_404(
+            Project,
+            pk=self.kwargs.get("project_pk"),
+            team__members=self.request.user.id,
+        )
+        kwargs["team"] = self.project.team
+        return kwargs
+
+    def get_success_url(self):
+        return reverse(
+            "projects:project-detail",
+            kwargs={"team_pk": self.project.team.id, "pk": self.project.id},
+        )
+
+    def form_valid(self, form):
+        form.instance.project = self.project
+        return super().form_valid(form)
