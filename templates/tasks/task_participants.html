@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>
+    {{ task.name }} details
+  </h1>
+   {% if assignments %}
+    <div class="ms-3">
+      <h4>Members</h4>
+      <table class="table">
+      <tr>
+        <th>Worker name</th>
+        <th>State</th>
+      </tr>
+
+      {% for assignment in assignments %}
+        <tr>
+          <td>
+            {% if assignment.worker.first_name and assignment.worker.last_name %}
+              {{ assignment.worker.first_name }} {{ assignment.worker.last_name }}
+            {% else %}
+              {% if assignment.worker.first_name or assignment.worker.last_name %}
+                {% if assignment.worker.first_name %}
+                  {{ assignment.worker.first_name }}
+                {% else %}
+                  {{ assignment.worker.last_name }}
+                {% endif %}
+              {% else %}
+                {% if assignment.worker.username %}
+                  {{ assignment.worker.username }}
+                {% else %}
+                  Unknown member
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          </td>
+          <td>
+            {{ assignment.is_completed|yesno:"completed,not completed" }}
+          </td>
+        </tr>
+      {% endfor %}
+      </table>
+    </div>
+  {% else %}
+    Task has no workers yet
+  {% endif %}
+  <form class="form-inline" action="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Return">
+  </form>
+{% endblock %}
