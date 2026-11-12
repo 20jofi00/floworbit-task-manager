@@ -26,8 +26,13 @@
     {% empty %}
       Task has no dependency
     {% endfor %}
+
   <form class="form-inline" action="{% url 'tasks:task-participants' team_pk=task.project.team.id pk=task.id %}" method="get">
     <input class="btn btn-primary" type="submit" value="Members">
+  </form>
+
+  <form action="{% url 'tasks:task-update' project_pk=task.project.id pk=task.id %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Edit">
   </form>
 
   <form class="form-inline" action="{% url 'tasks:task-list' team_pk=task.project.team.id %}" method="get">

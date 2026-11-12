@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from projects.models import Project
-from tasks.forms import TaskForm, TaskSearchForm
+from tasks.forms import TaskForm, TaskUpdateForm, TaskSearchForm
 from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import get_task_display_state
 from teams.models import Team
@@ -85,3 +85,31 @@ class TaskCreateView(LoginRequiredMixin, generic.CreateView):
     def form_valid(self, form):
         form.instance.project = self.project
         return super().form_valid(form)
+
+
+class TaskUpdateView(LoginRequiredMixin, generic.UpdateView):
+    model = Task
+    form_class = TaskUpdateForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["project"] = self.project
+        return kwargs
+
+    def get_success_url(self):
+        return reverse(
+            "projects:project-detail",
+            kwargs={
+                "team_pk": self.object.project.team.id,
+                "pk": self.object.project.id,
+            },
+        )
+
+    def get_queryset(self):
+        self.project = get_object_or_404(
+            Project,
+            pk=self.kwargs.get("project_pk"),
+            team__members=self.request.user.id,
+        )
+        queryset = Task.objects.filter(project=self.project)
+        return queryset

@@ -5,6 +5,15 @@ from projects.models import Project
 from tasks.models import Task, TaskDependency
 
 
+class TaskSearchForm(forms.Form):
+    name = forms.CharField(
+        max_length=55,
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
+
+
 class TaskModelForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -13,7 +22,6 @@ class TaskModelForm(forms.ModelForm):
             "description",
             "task_type",
             "tags",
-            "project",
             "deadline",
             "priority",
         )
@@ -42,24 +50,24 @@ class TaskModelForm(forms.ModelForm):
         return new_project
 
 
-class TaskAdminForm(TaskModelForm):
+class TaskForm(TaskModelForm):
     pass
 
 
-class TaskForm(TaskModelForm):
+class TaskUpdateForm(TaskModelForm):
+    class Meta:
+        model = Task
+        fields = TaskModelForm.Meta.fields + ("project",)
 
     def __init__(self, *args, **kwargs):
-        if "team" not in kwargs:
-            raise TypeError("You need to add team")
-        self.team = kwargs.pop("team")
+        if "project" not in kwargs:
+            raise TypeError("You need to add project")
+        self.project = kwargs.pop("project")
         super().__init__(*args, **kwargs)
-        self.fields["project"].queryset = Project.objects.filter(team=self.team)
+        self.fields["project"].queryset = Project.objects.filter(team=self.project.team)
 
 
-class TaskSearchForm(forms.Form):
-    name = forms.CharField(
-        max_length=55,
-        required=False,
-        label="",
-        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
-    )
+class TaskAdminForm(TaskModelForm):
+    class Meta:
+        model = Task
+        fields = TaskModelForm.Meta.fields + ("project",)
