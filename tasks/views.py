@@ -11,6 +11,7 @@ from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import (
     assign_worker_to_task,
     get_task_display_state,
+    remove_worker_from_task,
 )
 from teams.models import Team
 
@@ -159,3 +160,34 @@ class AssignWorkerView(LoginRequiredMixin, generic.FormView):
             "assignments": TaskAssignment.objects.filter(task=task),
         }
         return render(request, "tasks/task_participants.html", context)
+
+
+class RemoveWorkerView(LoginRequiredMixin, generic.FormView):
+    http_method_names = ["post"]
+
+    def post(self, request, project_pk: int, pk: int, worker_pk: int):
+        project = get_object_or_404(
+            Project,
+            pk=project_pk,
+            team__members=self.request.user.id,
+        )
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            project=project,
+        )
+        assignment = get_object_or_404(
+            TaskAssignment,
+            task=task,
+            worker_id=worker_pk,
+        )
+        remove_worker_from_task(task=task, worker=assignment.worker)
+        return redirect(
+            reverse(
+                "tasks:task-participants",
+                kwargs={
+                    "team_pk": project.team.id,
+                    "pk": task.id,
+                },
+            )
+        )
