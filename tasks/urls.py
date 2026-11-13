@@ -7,6 +7,7 @@ from tasks.views import (
     TaskUpdateView,
     AssignWorkerView,
     RemoveWorkerView,
+    AssignmentWorkerView,
 )
 
 app_name = "tasks"
@@ -38,5 +39,10 @@ urlpatterns = [
         "<int:project_pk>/<int:pk>/<int:worker_pk>/remove/",
         RemoveWorkerView.as_view(),
         name="task-remove-worker",
+    ),
+    path(
+        "<int:project_pk>/<int:pk>/task-assignment-status/",
+        AssignmentWorkerView.as_view(),
+        name="worker-task-state",
     ),
 ]

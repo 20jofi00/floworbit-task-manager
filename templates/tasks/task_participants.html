@@ -7,6 +7,12 @@
    {% if assignments %}
     <div class="ms-3">
       <h4>Members</h4>
+      {% if my_assignment %}
+        <form action="{% url 'tasks:worker-task-state' project_pk=task.project.id pk=task.id %}" method="post">
+          {% csrf_token %}
+          <input class="btn btn-primary" type="submit" value="{{ my_assignment.is_completed|yesno:'Cancel,Done' }}">
+        </form>
+      {% endif %}
       <table class="table">
       <tr>
         <th>Worker name</th>

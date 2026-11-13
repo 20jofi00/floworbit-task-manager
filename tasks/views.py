@@ -12,6 +12,7 @@ from tasks.services import (
     assign_worker_to_task,
     get_task_display_state,
     remove_worker_from_task,
+    set_assignment_completion,
 )
 from teams.models import Team
 
@@ -53,11 +54,21 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
         prerequisite_ids = TaskDependency.objects.filter(
             dependent_task=self.object
         ).values_list("prerequisite_task", flat=True)
+
         context["prerequisite_tasks"] = Task.objects.filter(id__in=prerequisite_ids)
+
         context["task"] = self.object
+
         self.object.state = get_task_display_state(task=self.object)
         context["assignments"] = TaskAssignment.objects.filter(task=self.object)
+
         context["form"] = AssignWorkerForm(team=self.object.project.team)
+
+        context["my_assignment"] = TaskAssignment.objects.filter(
+            task=self.object,
+            worker=self.request.user,
+        ).first()
+
         return context
 
     def get_queryset(self):
@@ -158,6 +169,10 @@ class AssignWorkerView(LoginRequiredMixin, generic.FormView):
             "task": task,
             "form": form,
             "assignments": TaskAssignment.objects.filter(task=task),
+            "my_assignment": TaskAssignment.objects.filter(
+                task=task,
+                worker=self.request.user,
+            ).first(),
         }
         return render(request, "tasks/task_participants.html", context)
 
@@ -182,6 +197,41 @@ class RemoveWorkerView(LoginRequiredMixin, generic.FormView):
             worker_id=worker_pk,
         )
         remove_worker_from_task(task=task, worker=assignment.worker)
+        return redirect(
+            reverse(
+                "tasks:task-participants",
+                kwargs={
+                    "team_pk": project.team.id,
+                    "pk": task.id,
+                },
+            )
+        )
+
+
+class AssignmentWorkerView(LoginRequiredMixin, generic.FormView):
+    http_method_names = ["post"]
+
+    def post(self, request, project_pk: int, pk: int):
+        project = get_object_or_404(
+            Project,
+            pk=project_pk,
+            team__members=self.request.user.id,
+        )
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            project=project,
+        )
+        assignment = get_object_or_404(
+            TaskAssignment,
+            task=task,
+            worker=request.user,
+        )
+        set_assignment_completion(
+            task=task,
+            worker=request.user,
+            is_completed=not assignment.is_completed,
+        )
         return redirect(
             reverse(
                 "tasks:task-participants",
