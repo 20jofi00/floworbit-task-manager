@@ -6,9 +6,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
 
 from projects.models import Project
-from tasks.forms import TaskForm, TaskUpdateForm, TaskSearchForm, AssignWorkerForm
+from tasks.forms import (
+    TaskForm,
+    TaskUpdateForm,
+    TaskSearchForm,
+    AssignWorkerForm,
+    TaskAddDependencyForm,
+)
 from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import (
+    add_task_dependency,
     assign_worker_to_task,
     get_task_display_state,
     remove_worker_from_task,
@@ -63,6 +70,10 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
         context["assignments"] = TaskAssignment.objects.filter(task=self.object)
 
         context["form"] = AssignWorkerForm(team=self.object.project.team)
+
+        context["dependency_form"] = TaskAddDependencyForm(
+            project=self.object.project, task=self.object
+        )
 
         context["my_assignment"] = TaskAssignment.objects.filter(
             task=self.object,
@@ -241,3 +252,54 @@ class AssignmentWorkerView(LoginRequiredMixin, generic.FormView):
                 },
             )
         )
+
+
+class TaskAddDependencyView(LoginRequiredMixin, generic.FormView):
+    form_class = TaskAddDependencyForm
+    http_method_names = ["post"]
+
+    def post(self, request, project_pk: int, pk: int):
+        project = get_object_or_404(
+            Project,
+            pk=project_pk,
+            team__members=self.request.user.id,
+        )
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            project=project,
+        )
+
+        dependency_form = TaskAddDependencyForm(
+            request.POST, project=project, task=task
+        )
+        if dependency_form.is_valid():
+            prerequisite_task = dependency_form.cleaned_data["prerequisite_task"]
+            try:
+                add_task_dependency(
+                    dependent_task=task,
+                    prerequisite_task=prerequisite_task,
+                )
+            except ValidationError as error:
+                dependency_form.add_error(None, error)
+            else:
+                return redirect(
+                    reverse(
+                        "tasks:task-detail",
+                        kwargs={
+                            "team_pk": project.team.id,
+                            "pk": task.id,
+                        },
+                    )
+                )
+        tasks_dependency_ids = TaskDependency.objects.filter(
+            dependent_task=task
+        ).values_list("prerequisite_task", flat=True)
+        tasks_dependency = Task.objects.filter(id__in=tasks_dependency_ids)
+        task.state = get_task_display_state(task=task)
+        context = {
+            "task": task,
+            "dependency_form": dependency_form,
+            "prerequisite_tasks": tasks_dependency,
+        }
+        return render(request, "tasks/task_detail.html", context)
