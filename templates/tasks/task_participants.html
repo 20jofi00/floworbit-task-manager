@@ -44,6 +44,28 @@
   {% else %}
     Task has no workers yet
   {% endif %}
+
+  <form action="{% url 'tasks:task-add-worker' project_pk=task.project.id pk=task.id %}" method="post">
+    {% csrf_token %}
+    <label>Выберите сотрудника:</label>
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {{ form.worker }}
+    {% if form.worker.errors %}
+      <div class="text-danger mt-1">
+          {% for error in form.worker.errors %}
+              <small>{{ error }}</small>
+          {% endfor %}
+      </div>
+    {% endif %}
+    <input class="btn btn-primary" type="submit" value="Add worker">
+  </form>
+
   <form class="form-inline" action="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}" method="get">
     <input class="btn btn-primary" type="submit" value="Return">
   </form>

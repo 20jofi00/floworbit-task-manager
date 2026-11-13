@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 
 from projects.models import Project
 from tasks.models import Task, TaskDependency
@@ -71,3 +72,20 @@ class TaskAdminForm(TaskModelForm):
     class Meta:
         model = Task
         fields = TaskModelForm.Meta.fields + ("project",)
+
+
+class AssignWorkerForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        if "team" not in kwargs:
+            raise TypeError("You need to add team")
+        self.team = kwargs.pop("team")
+        super().__init__(*args, **kwargs)
+        self.fields["worker"].queryset = get_user_model().objects.filter(
+            teams=self.team
+        )
+
+    worker = forms.ModelChoiceField(
+        queryset=None,
+        required=True,
+        label="",
+    )

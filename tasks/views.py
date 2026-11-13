@@ -1,12 +1,17 @@
 from django.urls import reverse
+from django.shortcuts import render
 from django.views import generic
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 
 from projects.models import Project
-from tasks.forms import TaskForm, TaskUpdateForm, TaskSearchForm
+from tasks.forms import TaskForm, TaskUpdateForm, TaskSearchForm, AssignWorkerForm
 from tasks.models import Task, TaskAssignment, TaskDependency
-from tasks.services import get_task_display_state
+from tasks.services import (
+    assign_worker_to_task,
+    get_task_display_state,
+)
 from teams.models import Team
 
 
@@ -51,6 +56,7 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
         context["task"] = self.object
         self.object.state = get_task_display_state(task=self.object)
         context["assignments"] = TaskAssignment.objects.filter(task=self.object)
+        context["form"] = AssignWorkerForm(team=self.object.project.team)
         return context
 
     def get_queryset(self):
@@ -73,7 +79,6 @@ class TaskCreateView(LoginRequiredMixin, generic.CreateView):
             pk=self.kwargs.get("project_pk"),
             team__members=self.request.user.id,
         )
-        kwargs["team"] = self.project.team
         return kwargs
 
     def get_success_url(self):
@@ -113,3 +118,44 @@ class TaskUpdateView(LoginRequiredMixin, generic.UpdateView):
         )
         queryset = Task.objects.filter(project=self.project)
         return queryset
+
+
+class AssignWorkerView(LoginRequiredMixin, generic.FormView):
+    form_class = AssignWorkerForm
+    http_method_names = ["post"]
+
+    def post(self, request, project_pk: int, pk: int):
+        project = get_object_or_404(
+            Project,
+            pk=project_pk,
+            team__members=self.request.user.id,
+        )
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            project=project,
+        )
+
+        form = AssignWorkerForm(request.POST, team=task.project.team)
+        if form.is_valid():
+            worker = form.cleaned_data["worker"]
+            try:
+                assign_worker_to_task(task=task, worker=worker)
+            except ValidationError as error:
+                form.add_error(None, error)
+            else:
+                return redirect(
+                    reverse(
+                        "tasks:task-participants",
+                        kwargs={
+                            "team_pk": project.team.id,
+                            "pk": task.id,
+                        },
+                    )
+                )
+        context = {
+            "task": task,
+            "form": form,
+            "assignments": TaskAssignment.objects.filter(task=task),
+        }
+        return render(request, "tasks/task_participants.html", context)
