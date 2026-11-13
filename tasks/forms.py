@@ -89,3 +89,23 @@ class AssignWorkerForm(forms.Form):
         required=True,
         label="",
     )
+
+
+class TaskAddDependencyForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        if "project" not in kwargs:
+            raise TypeError("You need to add project")
+        self.project = kwargs.pop("project")
+        if "task" not in kwargs:
+            raise TypeError("You need to add task")
+        self.task = kwargs.pop("task")
+        super().__init__(*args, **kwargs)
+        self.fields["prerequisite_task"].queryset = Task.objects.filter(
+            project=self.project,
+        ).exclude(pk=self.task.id)
+
+    prerequisite_task = forms.ModelChoiceField(
+        queryset=None,
+        required=True,
+        label="",
+    )
