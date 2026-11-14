@@ -10,6 +10,7 @@ from teams.models import Team
 
 class ProjectListView(LoginRequiredMixin, generic.ListView):
     model = Project
+    paginate_by = 5
 
     def get_context_data(self, **kwargs):
         context = super(ProjectListView, self).get_context_data(**kwargs)
@@ -18,13 +19,12 @@ class ProjectListView(LoginRequiredMixin, generic.ListView):
         return context
 
     def get_queryset(self):
-        team = get_object_or_404(
+        self.team = get_object_or_404(
             Team,
             pk=self.kwargs.get("team_pk"),
             members__id=self.request.user.id,
         )
-        self.team = team
-        queryset = Project.objects.filter(team=team)
+        queryset = Project.objects.filter(team=self.team).order_by("name", "pk")
         self.search_form = ProjectSearchForm(self.request.GET)
         if self.search_form.is_valid():
             queryset = queryset.filter(
