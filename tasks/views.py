@@ -25,6 +25,19 @@ from tasks.services import (
 from teams.models import Team
 
 
+def get_accessible_task(project_pk: int, task_pk: int, user_id: int) -> Task:
+    project = get_object_or_404(
+        Project,
+        pk=project_pk,
+        team__members=user_id,
+    )
+    return get_object_or_404(
+        Task,
+        pk=task_pk,
+        project=project,
+    )
+
+
 class TaskListView(LoginRequiredMixin, generic.ListView):
     model = Task
     paginate_by = 10
@@ -149,15 +162,8 @@ class AssignWorkerView(LoginRequiredMixin, generic.FormView):
     http_method_names = ["post"]
 
     def post(self, request, project_pk: int, pk: int):
-        project = get_object_or_404(
-            Project,
-            pk=project_pk,
-            team__members=self.request.user.id,
-        )
-        task = get_object_or_404(
-            Task,
-            pk=pk,
-            project=project,
+        task = get_accessible_task(
+            project_pk=project_pk, task_pk=pk, user_id=self.request.user.id
         )
 
         form = AssignWorkerForm(request.POST, team=task.project.team)
@@ -172,7 +178,7 @@ class AssignWorkerView(LoginRequiredMixin, generic.FormView):
                     reverse(
                         "tasks:task-participants",
                         kwargs={
-                            "team_pk": project.team.id,
+                            "team_pk": task.project.team.id,
                             "pk": task.id,
                         },
                     )
@@ -193,16 +199,10 @@ class RemoveWorkerView(LoginRequiredMixin, generic.FormView):
     http_method_names = ["post"]
 
     def post(self, request, project_pk: int, pk: int, worker_pk: int):
-        project = get_object_or_404(
-            Project,
-            pk=project_pk,
-            team__members=self.request.user.id,
+        task = get_accessible_task(
+            project_pk=project_pk, task_pk=pk, user_id=self.request.user.id
         )
-        task = get_object_or_404(
-            Task,
-            pk=pk,
-            project=project,
-        )
+
         assignment = get_object_or_404(
             TaskAssignment,
             task=task,
@@ -213,7 +213,7 @@ class RemoveWorkerView(LoginRequiredMixin, generic.FormView):
             reverse(
                 "tasks:task-participants",
                 kwargs={
-                    "team_pk": project.team.id,
+                    "team_pk": task.project.team.id,
                     "pk": task.id,
                 },
             )
@@ -224,15 +224,8 @@ class AssignmentWorkerView(LoginRequiredMixin, generic.FormView):
     http_method_names = ["post"]
 
     def post(self, request, project_pk: int, pk: int):
-        project = get_object_or_404(
-            Project,
-            pk=project_pk,
-            team__members=self.request.user.id,
-        )
-        task = get_object_or_404(
-            Task,
-            pk=pk,
-            project=project,
+        task = get_accessible_task(
+            project_pk=project_pk, task_pk=pk, user_id=self.request.user.id
         )
         assignment = get_object_or_404(
             TaskAssignment,
@@ -248,7 +241,7 @@ class AssignmentWorkerView(LoginRequiredMixin, generic.FormView):
             reverse(
                 "tasks:task-participants",
                 kwargs={
-                    "team_pk": project.team.id,
+                    "team_pk": task.project.team.id,
                     "pk": task.id,
                 },
             )
@@ -260,19 +253,12 @@ class TaskAddDependencyView(LoginRequiredMixin, generic.FormView):
     http_method_names = ["post"]
 
     def post(self, request, project_pk: int, pk: int):
-        project = get_object_or_404(
-            Project,
-            pk=project_pk,
-            team__members=self.request.user.id,
-        )
-        task = get_object_or_404(
-            Task,
-            pk=pk,
-            project=project,
+        task = get_accessible_task(
+            project_pk=project_pk, task_pk=pk, user_id=self.request.user.id
         )
 
         dependency_form = TaskAddDependencyForm(
-            request.POST, project=project, task=task
+            request.POST, project=task.project, task=task
         )
         if dependency_form.is_valid():
             prerequisite_task = dependency_form.cleaned_data["prerequisite_task"]
@@ -288,7 +274,7 @@ class TaskAddDependencyView(LoginRequiredMixin, generic.FormView):
                     reverse(
                         "tasks:task-detail",
                         kwargs={
-                            "team_pk": project.team.id,
+                            "team_pk": task.project.team.id,
                             "pk": task.id,
                         },
                     )
@@ -316,20 +302,13 @@ class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
         pk: int,
         prerequisite_task_pk: int,
     ):
-        project = get_object_or_404(
-            Project,
-            pk=project_pk,
-            team__members=self.request.user.id,
-        )
-        task = get_object_or_404(
-            Task,
-            pk=pk,
-            project=project,
+        task = get_accessible_task(
+            project_pk=project_pk, task_pk=pk, user_id=self.request.user.id
         )
         prerequisite_task = get_object_or_404(
             Task,
             pk=prerequisite_task_pk,
-            project=project,
+            project=task.project,
         )
         get_object_or_404(
             TaskDependency,
@@ -343,7 +322,7 @@ class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
             reverse(
                 "tasks:task-detail",
                 kwargs={
-                    "team_pk": project.team.id,
+                    "team_pk": task.project.team.id,
                     "pk": task.id,
                 },
             )
