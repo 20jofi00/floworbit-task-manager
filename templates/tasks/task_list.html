@@ -4,52 +4,7 @@
 {% block content %}
   <h1> {{ team.name }}</h1>
   <h1>Tasks list</h1>
-    <form action="" method="get" class="form-inline">
-      {{ search_form|crispy}}
-      <input type="submit" value="🔍" class="btn btn-secondary">
-    </form>
-  {% if task_list %}
-    <table class="table">
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Project</th>
-        <th>Tags</th>
-        <th>Deadline</th>
-        <th>Priority</th>
-        <th>Status</th>
-      </tr>
-      
-    {% for task in task_list %}
-      <tr>
-        <td>
-          <a href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">
-            {{ task.name }}
-          </a>        </td>
-        <td>
-          {{ task.task_type.name }}
-        </td>
-        <td>
-          {{ task.project.name }}
-        </td>
-        <td>
-          {% for tag in task.tags.all %}
-            {{ tag.name }}
-          {% endfor %}
-        </td>
-        <td>
-          {{ task.deadline }}
-        </td>
-        <td>
-          {{ task.priority }}
-        </td>
-        <td>
-          {{ task.state }}
-        </td>
-      </tr>
-    {% endfor %}
-    </table>
-  {% else %}
-    There are no tasks yet
-  {% endif%}
+    {% include "includes/search_form.html" %}
+
+  {% include "includes/task_table.html" with tasks=task_list empty_message="There are no tasks yet" %}
 {% endblock %}
