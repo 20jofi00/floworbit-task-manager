@@ -23,6 +23,10 @@
   <p><strong>Depends on:</strong></p>
     {% for prerequisite_task in prerequisite_tasks %}
       {{ prerequisite_task.name }} - {{ prerequisite_task.task_type }}, project - {{ prerequisite_task.project }}
+      <form class="form-inline" action="{% url 'tasks:task-remove-dependency' prerequisite_task_pk=prerequisite_task.id project_pk=task.project.id pk=task.id %}" method="post">
+        {% csrf_token %}
+        <input class="btn btn-danger" type="submit" value="Remove">
+      </form>
     {% empty %}
       Task has no dependency
     {% endfor %}
@@ -41,7 +45,7 @@
             {% endfor %}
         </div>
     {% endif %}
-    {{ dependency_form.prerequisite_task }}
+    {{ dependency_form.prerequisite_task }} 
     {% if dependency_form.prerequisite_task.errors %}
       <div class="text-danger mt-1">
           {% for error in dependency_form.prerequisite_task.errors %}
