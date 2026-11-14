@@ -5,10 +5,7 @@
   <h1>
     {{ team.name }} project list
   </h1>
-  <form action="" method="get" class="form-inline">
-    {{ search_form|crispy}}
-    <input type="submit" value="🔍" class="btn btn-secondary">
-  </form>
+    {% include "includes/search_form.html" %}
   <a href="{% url 'projects:project-create' team_pk=team.id %}" class="btn btn-primary link-to-page">
     Create
   </a>
