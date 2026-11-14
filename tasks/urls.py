@@ -10,6 +10,7 @@ from tasks.views import (
     AssignmentWorkerView,
     TaskAddDependencyView,
     TaskRemoveDependencyView,
+    MyTaskListView,
 )
 
 app_name = "tasks"
@@ -56,5 +57,10 @@ urlpatterns = [
         "<int:project_pk>/<int:pk>/<int:prerequisite_task_pk>/remove-dependency/",
         TaskRemoveDependencyView.as_view(),
         name="task-remove-dependency",
+    ),
+    path(
+        "my-tasks/",
+        MyTaskListView.as_view(),
+        name="my-task-list",
     ),
 ]
