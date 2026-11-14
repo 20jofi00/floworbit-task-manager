@@ -14,44 +14,31 @@
         </form>
       {% endif %}
       <table class="table">
-      <tr>
-        <th>Worker name</th>
-        <th>State</th>
-        <th>Remove</th>
-      </tr>
-
-      {% for assignment in assignments %}
-        <tr>
-          <td>
-            {% if assignment.worker.first_name and assignment.worker.last_name %}
-              {{ assignment.worker.first_name }} {{ assignment.worker.last_name }}
-            {% else %}
-              {% if assignment.worker.first_name or assignment.worker.last_name %}
-                {% if assignment.worker.first_name %}
-                  {{ assignment.worker.first_name }}
-                {% else %}
-                  {{ assignment.worker.last_name }}
-                {% endif %}
-              {% else %}
-                {% if assignment.worker.username %}
-                  {{ assignment.worker.username }}
-                {% else %}
-                  Unknown member
-                {% endif %}
-              {% endif %}
-            {% endif %}
-          </td>
-          <td>
-            {{ assignment.is_completed|yesno:"completed,not completed" }}
-          </td>
-          <td>
-            <form action="{% url 'tasks:task-remove-worker' project_pk=task.project.id pk=task.id worker_pk=assignment.worker.id %}" method="post">
-              {% csrf_token %}
-              <input class="btn btn-danger" type="submit" value="Remove">
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
+        <thead>
+          <tr>
+            <th>Worker name</th>
+            <th>State</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for assignment in assignments %}
+            <tr>
+              <td>
+                {% include "includes/worker_name.html" with worker=assignment.worker %}
+              </td>
+              <td>
+                {{ assignment.is_completed|yesno:"completed,not completed" }}
+              </td>
+              <td>
+                <form action="{% url 'tasks:task-remove-worker' project_pk=task.project.id pk=task.id worker_pk=assignment.worker.id %}" method="post">
+                  {% csrf_token %}
+                  <input class="btn btn-danger" type="submit" value="Remove">
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
       </table>
     </div>
   {% else %}
@@ -60,7 +47,7 @@
 
   <form action="{% url 'tasks:task-add-worker' project_pk=task.project.id pk=task.id %}" method="post">
     {% csrf_token %}
-    <label>Выберите сотрудника:</label>
+    <label>Choose worker:</label>
     {% if form.non_field_errors %}
         <div class="alert alert-danger">
             {% for error in form.non_field_errors %}
