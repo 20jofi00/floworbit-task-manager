@@ -17,6 +17,7 @@ from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import (
     add_task_dependency,
     assign_worker_to_task,
+    delete_task_dependency,
     get_task_display_state,
     remove_worker_from_task,
     set_assignment_completion,
@@ -303,3 +304,47 @@ class TaskAddDependencyView(LoginRequiredMixin, generic.FormView):
             "prerequisite_tasks": tasks_dependency,
         }
         return render(request, "tasks/task_detail.html", context)
+
+
+class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
+    http_method_names = ["post"]
+
+    def post(
+        self,
+        request,
+        project_pk: int,
+        pk: int,
+        prerequisite_task_pk: int,
+    ):
+        project = get_object_or_404(
+            Project,
+            pk=project_pk,
+            team__members=self.request.user.id,
+        )
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            project=project,
+        )
+        prerequisite_task = get_object_or_404(
+            Task,
+            pk=prerequisite_task_pk,
+            project=project,
+        )
+        get_object_or_404(
+            TaskDependency,
+            dependent_task=task,
+            prerequisite_task=prerequisite_task,
+        )
+
+        delete_task_dependency(dependent_task=task, prerequisite_task=prerequisite_task)
+
+        return redirect(
+            reverse(
+                "tasks:task-detail",
+                kwargs={
+                    "team_pk": project.team.id,
+                    "pk": task.id,
+                },
+            )
+        )
