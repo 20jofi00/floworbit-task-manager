@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+  <h1> My tasks </h1>
+    {% include "includes/search_form.html" %}
+  <h3>My Work in Progress</h3>
+  
+  {% include "includes/task_table.html" with tasks=incomplete_tasks empty_message="You have no tasks in progress" %}
+
+  <h3>My Work Completed</h3>
+  {% include "includes/task_table.html" with tasks=completed_tasks empty_message="You have not completed any tasks yet" %}
+{% endblock %}
