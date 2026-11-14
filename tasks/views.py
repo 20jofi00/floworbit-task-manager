@@ -327,3 +327,45 @@ class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
                 },
             )
         )
+
+
+class MyTaskListView(LoginRequiredMixin, generic.ListView):
+    model = Task
+    template_name = "tasks/my_task_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(MyTaskListView, self).get_context_data(**kwargs)
+        context["search_form"] = self.search_form
+        context["completed_tasks"] = []
+        context["incomplete_tasks"] = []
+
+        task_assignments = {}
+
+        for task_assignment in self.task_assignments:
+            task_assignments[task_assignment.task_id] = task_assignment
+
+        for task in self.object_list:
+            task.state = get_task_display_state(task=task)
+            if task_assignments[task.id].is_completed:
+                context["completed_tasks"].append(task)
+            else:
+                context["incomplete_tasks"].append(task)
+        return context
+
+    def get_queryset(self):
+        self.task_assignments = TaskAssignment.objects.filter(worker=self.request.user)
+
+        self.queryset = Task.objects.filter(
+            id__in=self.task_assignments.values_list(
+                "task",
+                flat=True,
+            )
+        ).order_by("-deadline", "pk")
+
+        self.search_form = TaskSearchForm(self.request.GET)
+        if self.search_form.is_valid():
+            self.queryset = self.queryset.filter(
+                name__icontains=self.search_form.cleaned_data["name"]
+            )
+            return self.queryset
+        return self.queryset
