@@ -4,7 +4,7 @@
 {% block content %}
   <h1> {{ team.name }}</h1>
   <h1>Tasks list</h1>
-    {% include "includes/search_form.html" %}
+    {% include "includes/task_filter_form.html" %}
 
   {% include "includes/task_table.html" with tasks=task_list empty_message="There are no tasks yet" %}
 {% endblock %}
