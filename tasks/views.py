@@ -12,6 +12,7 @@ from tasks.forms import (
     TaskSearchForm,
     AssignWorkerForm,
     TaskAddDependencyForm,
+    TeamTaskForm,
 )
 from tasks.models import Task, TaskAssignment, TaskDependency
 from tasks.services import (
@@ -362,10 +363,14 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
             )
         ).order_by("-deadline", "pk")
 
-        self.search_form = TaskSearchForm(self.request.GET)
+        self.search_form = TeamTaskForm(self.request.GET, user=self.request.user)
         if self.search_form.is_valid():
-            self.queryset = self.queryset.filter(
-                name__icontains=self.search_form.cleaned_data["name"]
-            )
-            return self.queryset
+            if self.search_form.cleaned_data["teams"]:
+                self.queryset = self.queryset.filter(
+                    project__team__in=self.search_form.cleaned_data["teams"]
+                )
+            if self.search_form.cleaned_data["name"]:
+                self.queryset = self.queryset.filter(
+                    name__icontains=self.search_form.cleaned_data["name"]
+                )
         return self.queryset
