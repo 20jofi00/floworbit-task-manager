@@ -47,6 +47,22 @@ class TaskListView(LoginRequiredMixin, generic.ListView):
         context = super(TaskListView, self).get_context_data(**kwargs)
         context["search_form"] = self.search_form
         context["team"] = self.team
+
+        advanced_fields = (
+            "projects",
+            "task_types",
+            "task_tags",
+            "priority",
+            "deadline_before",
+        )
+
+        advanced_filters_active = any(
+            any(value.strip() for value in self.request.GET.getlist(field))
+            for field in advanced_fields
+        )
+
+        context["advanced_filters_active"] = advanced_filters_active
+
         for task in context["task_list"]:
             task.state = get_task_display_state(task=task)
         return context
