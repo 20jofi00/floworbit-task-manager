@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 
 from projects.models import Project
-from tasks.models import Task, TaskDependency
+from tasks.models import Tag, Task, TaskDependency, TaskType
 from teams.models import Team
 
 
@@ -13,6 +13,54 @@ class TaskSearchForm(forms.Form):
         required=False,
         label="",
         widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
+
+
+class TaskFilterForm(forms.Form):
+
+    def __init__(self, *args, **kwargs):
+        if "team" not in kwargs:
+            raise TypeError("You need to add team")
+        self.team = kwargs.pop("team")
+
+        super().__init__(*args, **kwargs)
+        self.fields["projects"].queryset = Project.objects.filter(
+            team=self.team,
+        )
+        self.fields["task_types"].queryset = TaskType.objects.filter(
+            tasks__project__team=self.team
+        ).distinct()
+        self.fields["task_tags"].queryset = Tag.objects.filter(
+            tasks__project__team=self.team
+        ).distinct()
+
+    name = forms.CharField(
+        max_length=55,
+        required=False,
+        label="",
+        widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
+    projects = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=None,
+    )
+    task_types = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=None,
+    )
+    task_tags = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=None,
+    )
+
+    priority = forms.ChoiceField(
+        required=False,
+        choices=[("", "Any priority")] + Task.PRIORITY_CHOICES,
+    )
+    deadline_before = forms.DateField(
+        required=False,
+        label="Due by",
+        widget=forms.DateInput(attrs={"type": "date"}),
     )
 
 
