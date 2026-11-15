@@ -7,9 +7,9 @@ from django.core.exceptions import ValidationError
 
 from projects.models import Project
 from tasks.forms import (
+    TaskFilterForm,
     TaskForm,
     TaskUpdateForm,
-    TaskSearchForm,
     AssignWorkerForm,
     TaskAddDependencyForm,
     TeamTaskForm,
@@ -60,11 +60,33 @@ class TaskListView(LoginRequiredMixin, generic.ListView):
         queryset = Task.objects.filter(project__team=self.team).order_by(
             "-deadline", "pk"
         )
-        self.search_form = TaskSearchForm(self.request.GET)
+        self.search_form = TaskFilterForm(self.request.GET, team=self.team)
         if self.search_form.is_valid():
-            queryset = queryset.filter(
-                name__icontains=self.search_form.cleaned_data["name"]
-            )
+            if self.search_form.cleaned_data["name"]:
+                queryset = queryset.filter(
+                    name__icontains=self.search_form.cleaned_data["name"]
+                )
+            if self.search_form.cleaned_data["projects"]:
+                queryset = queryset.filter(
+                    project__in=self.search_form.cleaned_data["projects"]
+                )
+            if self.search_form.cleaned_data["task_types"]:
+                queryset = queryset.filter(
+                    task_type__in=self.search_form.cleaned_data["task_types"]
+                )
+            if self.search_form.cleaned_data["task_tags"]:
+                queryset = queryset.filter(
+                    tags__in=self.search_form.cleaned_data["task_tags"]
+                ).distinct()
+            if self.search_form.cleaned_data["priority"]:
+                queryset = queryset.filter(
+                    priority=self.search_form.cleaned_data["priority"]
+                )
+            if self.search_form.cleaned_data["deadline_before"]:
+                queryset = queryset.filter(
+                    deadline__lte=self.search_form.cleaned_data["deadline_before"]
+                )
+
         return queryset
 
 
