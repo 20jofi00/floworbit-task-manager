@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 
 from projects.models import Project
 from tasks.models import Task, TaskDependency
+from teams.models import Team
 
 
 class TaskSearchForm(forms.Form):
@@ -12,6 +13,20 @@ class TaskSearchForm(forms.Form):
         required=False,
         label="",
         widget=forms.TextInput(attrs={"placeholder": "Search by name"}),
+    )
+
+
+class TeamTaskForm(TaskSearchForm):
+    def __init__(self, *args, **kwargs):
+        if "user" not in kwargs:
+            raise TypeError("You need to add user")
+        self.user = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
+        self.fields["teams"].queryset = Team.objects.filter(members=self.user)
+
+    teams = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
     )
 
 
