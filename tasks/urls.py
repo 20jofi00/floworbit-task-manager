@@ -1,6 +1,7 @@
 from django.urls import path
 
 from tasks.views import (
+    TaskBoardView,
     TaskListView,
     TaskDetailView,
     TaskCreateView,
@@ -62,5 +63,10 @@ urlpatterns = [
         "my-tasks/",
         MyTaskListView.as_view(),
         name="my-task-list",
+    ),
+    path(
+        "<int:project_pk>/project-tasks/",
+        TaskBoardView.as_view(),
+        name="project-task-board",
     ),
 ]
