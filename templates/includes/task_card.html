@@ -1,0 +1,9 @@
+{% for task in tasks %}
+  <div>
+    <a href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">
+      {{ task.name }}
+    </a> - {{ task.deadline }}, {{ task.priority }}
+  </div>
+{% empty %}
+  {{ empty_message }}
+{% endfor %}
