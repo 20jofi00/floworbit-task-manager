@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>{{ month_date|date:"F Y" }}</h1>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Monday</th>
+        <th>Tuesday</th>
+        <th>Wednesday</th>
+        <th>Thursday</th>
+        <th>Friday</th>
+        <th>Saturday</th>
+        <th>Sunday</th>
+      </tr>
+    </thead>
+
+  <tbody>
+    {% for week in calendar_weeks %}
+      <tr>
+      {% for day in week %}
+        <td>
+          <div {% if not day.is_current_month %} class="text-muted" {% endif %}>{{ day.date|date:"j" }} </div>
+          {% if day.is_current_month %}
+            {% for task in day.tasks %}
+              <div>
+                <a href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">
+                  {{ task.name }} - {{ task.state }}, {{ task.priority }}
+                </a>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </td>
+      {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
