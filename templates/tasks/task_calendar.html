@@ -37,4 +37,15 @@
     {% endfor %}
     </tbody>
   </table>
+  {% if prev_month %}
+    <a href="{% url 'tasks:project-task-calendar' project_pk=project.id %}?year={{ prev_month|date:'Y' }}&month={{ prev_month|date:'n' }}" class="btn">
+      Previous month
+    </a>
+  {% endif %}
+
+  {% if next_month %}
+    <a href="{% url 'tasks:project-task-calendar' project_pk=project.id %}?year={{ next_month|date:'Y' }}&month={{ next_month|date:'n' }}" class="btn">
+      Next month
+    </a>
+  {% endif %}
 {% endblock %}
