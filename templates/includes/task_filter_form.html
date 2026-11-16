@@ -1,7 +1,7 @@
 {% load crispy_forms_filters %}
 
 <form action="" method="GET">
-  {{ search_form.name|crispy}}
+  {{ search_form.name}}
   <input type="submit" value="🔍" class="btn btn-secondary">
 
   <details class="advanced-filters"
@@ -9,11 +9,11 @@
     open
   {% endif%}>
     <summary>Advanced filters</summary>
-    {{ search_form.projects|crispy}}
-    {{ search_form.task_types|crispy}}
-    {{ search_form.task_tags|crispy}}
-    {{ search_form.priority|crispy}}
-    {{ search_form.deadline_before|crispy}}
+    {{ search_form.projects}}
+    {{ search_form.task_types}}
+    {{ search_form.task_tags}}
+    {{ search_form.priority}}
+    {{ search_form.deadline_before}}
     <button type="submit">Apply filters</button>
   </details>
 
