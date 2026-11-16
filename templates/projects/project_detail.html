@@ -32,6 +32,10 @@
     <input class="btn btn-primary" type="submit" value="Task board">
   </form>
 
+  <form action="{% url 'tasks:project-task-calendar' project_pk=project.id %}" method="get">
+    <input class="btn btn-primary" type="submit" value="Task calendar">
+  </form>
+
   <form action="{% url 'projects:project-list' team_pk=project.team.id %}" method="get">
     <input class="btn btn-primary" type="submit" value="Return">
   </form>
