@@ -1,5 +1,10 @@
+import calendar
+from datetime import date, timedelta
+
+from django.http import Http404
 from django.urls import reverse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views import generic
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -412,3 +417,108 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
                     name__icontains=self.search_form.cleaned_data["name"]
                 )
         return self.queryset
+
+
+class TaskBoardView(LoginRequiredMixin, generic.ListView):
+    model = Task
+    template_name = "tasks/project_task_board.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(TaskBoardView, self).get_context_data(**kwargs)
+        context["project"] = self.project
+
+        context["unassigned_tasks"] = []
+        context["tasks_in_progress"] = []
+        context["blocked_tasks"] = []
+        context["completed_tasks"] = []
+
+        for task in self.object_list:
+            task.state = get_task_display_state(task=task)
+            if task.state == "unassigned":
+                context["unassigned_tasks"].append(task)
+            elif task.state == "in_progress":
+                context["tasks_in_progress"].append(task)
+            elif task.state == "blocked":
+                context["blocked_tasks"].append(task)
+            elif task.state == "completed":
+                context["completed_tasks"].append(task)
+        return context
+
+    def get_queryset(self):
+        self.project = get_object_or_404(
+            Project,
+            pk=self.kwargs.get("project_pk"),
+            team__members=self.request.user.id,
+        )
+        queryset = Task.objects.filter(project=self.project)
+        return queryset
+
+
+class TaskCalendarView(LoginRequiredMixin, generic.ListView):
+    model = Task
+    template_name = "tasks/task_calendar.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(TaskCalendarView, self).get_context_data(**kwargs)
+
+        context["project"] = self.project
+
+        today = timezone.localdate()
+
+        try:
+            month = int(self.request.GET.get("month", today.month))
+            if not (month >= 1 and month <= 12):
+                raise Http404("Unknown month")
+            year = int(self.request.GET.get("year", today.year))
+            if not (2000 <= year <= 2100):
+                raise ValueError("Год вне допустимого диапазона")
+            context["month_date"] = date(year, month, 1)
+        except (ValueError, TypeError):
+            raise Http404("Invalid data")
+
+        month_tasks = self.object_list.filter(
+            deadline__year=year,
+            deadline__month=month,
+        )
+
+        day_tasks = {}
+
+        for task in month_tasks:
+            task.state = get_task_display_state(task=task)
+            day_tasks.setdefault(task.deadline.day, []).append(task)
+        cal = calendar.Calendar(firstweekday=0)
+        context["calendar_weeks"] = []
+
+        for week in cal.monthdatescalendar(
+            context["month_date"].year, context["month_date"].month
+        ):
+            week_days = []
+            for day_date in week:
+                is_current_month = day_date.month == context["month_date"].month
+                week_days.append(
+                    {
+                        "date": day_date,
+                        "is_current_month": is_current_month,
+                        "tasks": (
+                            day_tasks.get(day_date.day, []) if is_current_month else []
+                        ),
+                    }
+                )
+            context["calendar_weeks"].append(week_days)
+
+        prev_month = (context["month_date"] - timedelta(days=1)).replace(day=1)
+
+        next_month = (context["month_date"] + timedelta(days=32)).replace(day=1)
+        context["prev_month"] = prev_month if prev_month.year >= 2000 else None
+        context["next_month"] = next_month if next_month.year <= 2100 else None
+
+        return context
+
+    def get_queryset(self):
+        self.project = get_object_or_404(
+            Project,
+            pk=self.kwargs.get("project_pk"),
+            team__members=self.request.user.id,
+        )
+        queryset = Task.objects.filter(project=self.project)
+        return queryset
