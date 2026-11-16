@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+  <h1> {{ project.name }}</h1>
+  <h3>Task board</h3>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Unassigned</th>
+        <th>In Progress</th>
+        <th>Blocked</th>
+        <th>Completed</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          {% include "includes/task_card.html" with tasks=unassigned_tasks empty_message="There are no unassigned tasks yet" %}
+        </td>
+        <td>
+          {% include "includes/task_card.html" with tasks=tasks_in_progress empty_message="There are no tasks in progress" %}
+        </td>
+        <td>
+          {% include "includes/task_card.html" with tasks=blocked_tasks empty_message="There are no blocked tasks yet" %}
+        </td>
+        <td>
+          {% include "includes/task_card.html" with tasks=completed_tasks empty_message="There are no completed tasks yet" %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+{% endblock %}
