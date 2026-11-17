@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container py-4">
+    <h1 class="mb-4">{{ team.name }} dashboard</h1>
+
+    <section class="d-grid gap-3" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));" aria-label="Task statistics">
+
+      <div class="card card-body text-center shadow-sm border-dark">
+        <div class="display-6 fw-bold text-dark">{{ stats.total_tasks }}</div>
+        <div class="text-muted small text-uppercase mt-1">All</div>
+      </div>
+
+      <div class="card card-body text-center shadow-sm border-success">
+        <div class="display-6 fw-bold text-success">{{ stats.completed_tasks }}</div>
+        <div class="text-muted small text-uppercase mt-1">Completed</div>
+      </div>
+
+      <div class="card card-body text-center shadow-sm">
+        <div class="display-6 fw-bold">{{ stats.open_tasks }}</div>
+        <div class="text-muted small text-uppercase mt-1">Open</div>
+      </div>
+
+      <div class="card card-body text-center shadow-sm border-danger">
+        <div class="display-6 fw-bold text-danger">{{ stats.blocked_tasks }}</div>
+        <div class="text-muted small text-uppercase mt-1">Blocked</div>
+      </div>
+
+      <div class="card card-body text-center shadow-sm border-warning">
+        <div class="display-6 fw-bold text-warning">{{ stats.overdue_tasks }}</div>
+        <div class="text-muted small text-uppercase mt-1">Overdue</div>
+      </div>
+
+    </section>
+
+    <h3>Projects</h3>
+
+    {% for project in projects %}
+      <div>
+        <a href="{% url 'projects:project-detail' team_pk=team.id pk=project.id %}">
+          {{ project.name }}
+        </a>: {{ project.completed_tasks }} of {{ project.total_tasks }} tasks completed - {{ project.progress_percent }}%
+      </div>
+    {% empty %}
+      No projects in this team yet
+    {% endfor %}
+  </div>
+  <div class="container py-4">
+    <a class="btn btn-primary" href="{% url 'teams:team-detail' pk=team.id %}">
+      Return to team
+    </a>
+  </div>
+
+{% endblock %}
