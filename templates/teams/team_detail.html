@@ -41,6 +41,10 @@
     Dashboard
   </a>
 
+  <a class="btn btn-primary" href="{% url 'teams:team-workload' pk=team.id %}">
+    Workload
+  </a>
+
   <a class="btn btn-primary" href="{% url 'teams:team-list' %}">
     Return
   </a>
