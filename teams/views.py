@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from teams.forms import TeamSearchForm
 from teams.models import Team
+from teams.service import get_team_dashboard_stats
 
 
 class TeamListView(LoginRequiredMixin, generic.ListView):
@@ -31,4 +32,21 @@ class TeamDetailView(LoginRequiredMixin, generic.DetailView):
         queryset = Team.objects.filter(
             members__id=self.request.user.id
         ).prefetch_related("members__position")
+        return queryset
+
+
+class TeamDashboardView(LoginRequiredMixin, generic.DetailView):
+    model = Team
+    template_name = "teams/team_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(TeamDashboardView, self).get_context_data(**kwargs)
+        context["team"] = self.object
+        stats = get_team_dashboard_stats(team=self.object)
+        context["stats"] = stats["stats"]
+        context["projects"] = stats["projects"]
+        return context
+
+    def get_queryset(self):
+        queryset = Team.objects.filter(members__id=self.request.user.id).order_by("pk")
         return queryset
