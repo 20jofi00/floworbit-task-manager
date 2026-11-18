@@ -4,6 +4,7 @@ from teams.views import (
     TeamDashboardView,
     TeamListView,
     TeamDetailView,
+    TeamWorkloadView,
 )
 
 app_name = "teams"
@@ -14,4 +15,5 @@ urlpatterns = [
     path(
         "team/<int:pk>/dashboard/", TeamDashboardView.as_view(), name="team-dashboard"
     ),
+    path("team/<int:pk>/workload/", TeamWorkloadView.as_view(), name="team-workload"),
 ]
