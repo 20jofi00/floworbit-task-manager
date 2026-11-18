@@ -2,9 +2,7 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.utils import timezone
 
 from accounts.models import Worker
-from projects.models import Project
 from tasks.models import Task, TaskAssignment
-from tasks.services import get_task_display_state
 from teams.models import Team
 
 
@@ -25,6 +23,8 @@ def require_team_member(worker: Worker, team: Team) -> None:
 
 
 def get_team_dashboard_stats(team: Team) -> dict:
+    from tasks.services import get_task_display_state
+
     today = timezone.localdate()
     stats = {
         "total_tasks": 0,
