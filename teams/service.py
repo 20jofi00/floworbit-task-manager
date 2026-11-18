@@ -48,4 +48,18 @@ def get_team_dashboard_stats(team: Team) -> dict:
             stats["blocked_tasks"] += 1
         else:
             stats["open_tasks"] += 1
-    return stats
+
+    projects = []
+    for project in team.projects.all():
+        tasks = Task.objects.filter(project=project)
+        project.total_tasks = tasks.count()
+        project.completed_tasks = tasks.filter(is_completed=True).count()
+        if project.total_tasks:
+            project.progress_percent = round(
+                project.completed_tasks / project.total_tasks * 100, 2
+            )
+        else:
+            project.progress_percent = 0
+        projects.append(project)
+
+    return {"stats": stats, "projects": projects}
