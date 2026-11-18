@@ -14,24 +14,34 @@
     <h4>Members</h4>
 
     {% for member in team.members.all %}
-      {% include "includes/worker_name.html" with worker=member %}
+      <div>
+        {% include "includes/worker_name.html" with worker=member %} - 
 
-      {% if member.position %}
-        <p><strong>Position:</strong> {{ member.position }}</p>
-      {% else %}
-        Member has no position
-      {% endif %}
+        {% if member.position %}
+          <p><strong>Position:</strong> {{ member.position }}</p>
+        {% else %}
+          Member has no position
+        {% endif %}
+      </div>
     {% empty %}
       <p>No members!</p>
     {% endfor %}
+    <br>
   </div>
-  <form action="{% url 'projects:project-list' team_pk=team.id%}" method="get" class="form-inline">
-    <input type="submit" value="Projects" class="btn btn-secondary">
-  </form>
-    <form action="{% url 'tasks:task-list' team_pk=team.id %}" method="get" class="form-inline">
-    <input type="submit" value="Tasks" class="btn btn-secondary">
-  </form>
-  <form class="form-inline" action="{% url 'teams:team-list' %}" method="get">
-    <input class="btn btn-primary" type="submit" value="Return">
-  </form>
+
+  <a href="{% url 'projects:project-list' team_pk=team.id%}" class="btn btn-primary">
+    Projects
+  </a>
+
+  <a href="{% url 'tasks:task-list' team_pk=team.id %}" class="btn btn-primary">
+    Tasks
+  </a>
+
+  <a class="btn btn-primary" href="{% url 'teams:team-dashboard' pk=team.id %}">
+    Dashboard
+  </a>
+
+  <a class="btn btn-primary" href="{% url 'teams:team-list' %}">
+    Return
+  </a>
 {% endblock %}
