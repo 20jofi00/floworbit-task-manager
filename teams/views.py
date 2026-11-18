@@ -1,6 +1,7 @@
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 
+from tasks.models import TaskAssignment
 from teams.forms import TeamSearchForm
 from teams.models import Team
 from teams.service import get_team_dashboard_stats
@@ -45,6 +46,35 @@ class TeamDashboardView(LoginRequiredMixin, generic.DetailView):
         stats = get_team_dashboard_stats(team=self.object)
         context["stats"] = stats["stats"]
         context["projects"] = stats["projects"]
+        return context
+
+    def get_queryset(self):
+        queryset = Team.objects.filter(members__id=self.request.user.id).order_by("pk")
+        return queryset
+
+
+class TeamWorkloadView(LoginRequiredMixin, generic.DetailView):
+    model = Team
+    template_name = "teams/team_workload.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(TeamWorkloadView, self).get_context_data(**kwargs)
+        context["team"] = self.object
+        members = []
+        for member in self.object.members.all():
+            members_tasks = TaskAssignment.objects.filter(
+                task__project__team=self.object,
+                worker=member,
+            )
+            member.incomplete_assignments = members_tasks.filter(
+                is_completed=False
+            ).count()
+            member.completed_assignments = members_tasks.filter(
+                is_completed=True
+            ).count()
+            members.append(member)
+
+        context["members"] = members
         return context
 
     def get_queryset(self):
