@@ -1,12 +1,32 @@
 {% extends "base.html" %}
 {% load crispy_forms_filters %}
+{% block title %}<title>Task form</title>{% endblock %}
 
 {% block content %}
-  <h1>{{ object|yesno:"Update,Create" }} task</h1>
-  <form action="" method="post" novalidate>
+  <h1 class="mb-4">{{ object|yesno:"Edit,Create" }} task</h1>
+
+  <form method="post" class="bg-white border rounded p-4" novalidate>
     {% csrf_token %}
     {{ form|crispy }}
 
-    <input type="submit" value="Submit" class="btn btn-primary">
+    <button type="submit" class="btn btn-primary">
+      Save
+    </button>
+
+    {% if object %}
+      <a
+        href="{% url 'tasks:task-detail' team_pk=object.project.team.id pk=object.id %}"
+        class="btn btn-outline-secondary"
+      >
+        Cancel
+      </a>
+    {% else %}
+      <a
+        href="{% url 'tasks:project-task-board' project_pk=view.kwargs.project_pk %}"
+        class="btn btn-outline-secondary"
+      >
+        Cancel
+      </a>
+    {% endif %}
   </form>
 {% endblock %}
