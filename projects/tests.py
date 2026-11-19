@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
+from projects.forms import ProjectAdminForm
 from projects.models import Project
 from projects.service import move_project_to_team
 from tasks.models import Task, TaskType
@@ -314,6 +315,30 @@ class ProjectTests(TestCase):
                 team=self.other_team,
                 project=self.project,
             )
+
+        self.project.refresh_from_db()
+
+        self.assertEqual(self.project.team, self.team)
+
+    def test_admin_form_rejects_moving_project_with_tasks(self):
+        Task.objects.create(
+            name="Existing task",
+            task_type=self.task_type,
+            project=self.project,
+            deadline="2026-11-18",
+        )
+
+        form = ProjectAdminForm(
+            data={
+                "name": self.project.name,
+                "description": self.project.description,
+                "team": self.other_team.pk,
+            },
+            instance=self.project,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("team", form.errors)
 
         self.project.refresh_from_db()
 
