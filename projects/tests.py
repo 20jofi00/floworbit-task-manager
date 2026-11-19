@@ -33,6 +33,117 @@ class ProjectTests(TestCase):
 
         cls.task_type = TaskType.objects.create(name="Bug")
 
+    def test_project_list_requires_login(self):
+        url = reverse(
+            "projects:project-list",
+            kwargs={"team_pk": self.team.pk},
+        )
+
+        response = self.client.get(url)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={url}",
+        )
+
+    def test_project_list_shows_only_selected_team_projects(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "projects:project-list",
+                kwargs={"team_pk": self.team.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerySetEqual(
+            response.context["project_list"],
+            [self.project],
+        )
+
+    def test_project_create_saves_project(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.post(
+            reverse(
+                "projects:project-create",
+                kwargs={"team_pk": self.team.pk},
+            ),
+            {
+                "name": "New project",
+                "description": "New description",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "projects:project-list",
+                kwargs={"team_pk": self.team.pk},
+            ),
+        )
+
+        project = Project.objects.get(name="New project")
+
+        self.assertEqual(project.team, self.team)
+        self.assertEqual(project.description, "New description")
+
+    def test_project_update_saves_changes(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.post(
+            reverse(
+                "projects:project-update",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": self.project.pk,
+                },
+            ),
+            {
+                "name": "Updated project",
+                "description": "Updated description",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "projects:project-detail",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": self.project.pk,
+                },
+            ),
+        )
+
+        self.project.refresh_from_db()
+
+        self.assertEqual(self.project.name, "Updated project")
+        self.assertEqual(self.project.description, "Updated description")
+        self.assertEqual(self.project.team, self.team)
+
+    def test_project_rejects_duplicate_name(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.post(
+            reverse(
+                "projects:project-create",
+                kwargs={"team_pk": self.team.pk},
+            ),
+            {"name": self.project.name},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("name", response.context["form"].errors)
+        self.assertEqual(
+            Project.objects.filter(
+                name=self.project.name,
+                team=self.team,
+            ).count(),
+            1,
+        )
+
     def test_foreign_team_project_posts_are_rejected(self):
         self.client.force_login(self.worker)
 
@@ -155,4 +266,25 @@ class ProjectTests(TestCase):
         self.assertEqual(
             response.context["percent_of_completed_tasks"],
             33.33,
+        )
+
+    def test_empty_project_has_zero_progress(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "projects:project-detail",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": self.project.pk,
+                },
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["num_tasks"], 0)
+        self.assertEqual(response.context["num_completed_tasks"], 0)
+        self.assertEqual(
+            response.context["percent_of_completed_tasks"],
+            0,
         )
