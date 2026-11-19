@@ -28,11 +28,7 @@ class Task(models.Model):
         on_delete=models.PROTECT,
         related_name="tasks",
     )
-    tags = models.ManyToManyField(
-        Tag,
-        related_name="tasks",
-        blank=True
-    )
+    tags = models.ManyToManyField(Tag, related_name="tasks", blank=True)
     project = models.ForeignKey(
         Project,
         on_delete=models.PROTECT,
@@ -45,7 +41,9 @@ class Task(models.Model):
         ("low", "Low"),
     ]
     deadline = models.DateField()
-    priority = models.CharField(max_length=6, choices=PRIORITY_CHOICES, default="medium")
+    priority = models.CharField(
+        max_length=6, choices=PRIORITY_CHOICES, default="medium"
+    )
     is_completed = models.BooleanField(default=False)
 
     assignees = models.ManyToManyField(
@@ -74,9 +72,7 @@ class TaskAssignment(models.Model):
 
     class Meta:
         constraints = [
-            UniqueConstraint(
-                fields=["task", "worker"], name="unique_worker_per_task"
-            )
+            UniqueConstraint(fields=["task", "worker"], name="unique_worker_per_task")
         ]
 
     def clean(self):
@@ -86,9 +82,7 @@ class TaskAssignment(models.Model):
                 return
             else:
                 raise ValidationError(
-                    {
-                     "worker": "This worker is not a member of the project's team"
-                    }
+                    {"worker": "This worker is not a member of the project's team"}
                 )
 
     def save(self, **kwargs):
@@ -127,7 +121,7 @@ class TaskDependency(models.Model):
                     tasks_id_list = [self.prerequisite_task.id]
                     done_tasks_id = set()
                     while True:
-                        if tasks_id_list: 
+                        if tasks_id_list:
                             if tasks_id_list[0] not in done_tasks_id:
                                 if tasks_id_list[0] != self.dependent_task.id:
                                     for task_id in TaskDependency.objects.filter(
