@@ -1,28 +1,67 @@
 {% extends "base.html" %}
 {% load crispy_forms_filters %}
+{% block title %}<title>Projects</title>{% endblock %}
 
 {% block content %}
-  <h1>
-    {{ team.name }} project list
-  </h1>
-    {% include "includes/search_form.html" %}
-  <a href="{% url 'projects:project-create' team_pk=team.id %}" class="btn btn-primary link-to-page">
-    Create
+  <h1 class="mb-2">Projects</h1>
+  <p class="text-secondary text-break mb-4">{{ team.name }}</p>
+
+  <form method="get" class="mb-4">
+    {{ search_form|crispy }}
+    <button type="submit" class="btn btn-primary">Search</button>
+
+    {% if request.GET.name %}
+      <a
+        href="{% url 'projects:project-list' team_pk=team.id %}"
+        class="btn btn-outline-secondary"
+      >
+        Clear
+      </a>
+    {% endif %}
+  </form>
+
+  <a
+    href="{% url 'projects:project-create' team_pk=team.id %}"
+    class="btn btn-primary mb-4"
+  >
+    Create project
   </a>
-  {% if project_list %}
-    <ul>
-      {% for project in project_list %}
-        <li>
-          <a href="{% url 'projects:project-detail' team_pk=team.id pk=project.id %}">
-            {{ project.name }}
-          </a>
-          {% if project.description %}
-            {{ project.description }}
+
+  <div class="row g-3 mb-4">
+    {% for project in project_list %}
+      <div class="col-12 col-lg-6">
+        <div class="bg-white border rounded h-100 p-4">
+          <h2 class="h5 text-break">
+            <a
+              href="{% url 'projects:project-detail' team_pk=team.id pk=project.id %}"
+              class="text-decoration-none"
+            >
+              {{ project.name }}
+            </a>
+          </h2>
+
+          <p class="text-secondary text-break mb-0">
+            {{ project.description|default:"No description yet." }}
+          </p>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <p class="bg-white border rounded p-4 mb-0">
+          {% if request.GET.name %}
+            No projects match your search.
+          {% else %}
+            This team has no projects yet.
           {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No projects found</p>
-  {% endif %}
+        </p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <a
+    href="{% url 'teams:team-detail' pk=team.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Back to team
+  </a>
 {% endblock %}
