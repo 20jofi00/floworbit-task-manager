@@ -1,7 +1,19 @@
 {% extends "base.html" %}
+{% block title %}<title>Logged out</title>{% endblock %}
 
 {% block content %}
-<p>Logged out!</p>
+  <div class="col-12 col-md-8 col-lg-6 col-xl-5 mx-auto">
+    <p class="text-primary fw-bold fs-4 mb-4">FlowOrbit</p>
 
-<a href="{% url 'login'%}">Click here to login again.</a>
+    <div class="bg-white border rounded text-center p-4">
+      <h1 class="h3 mb-3">You have logged out</h1>
+      <p class="text-secondary mb-4">
+        Log in again to return to your workspace.
+      </p>
+
+      <a href="{% url 'login' %}" class="btn btn-primary">
+        Log in
+      </a>
+    </div>
+  </div>
 {% endblock %}
