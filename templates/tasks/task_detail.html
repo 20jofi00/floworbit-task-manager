@@ -1,66 +1,141 @@
 {% extends "base.html" %}
+{% load crispy_forms_filters %}
+{% block title %}<title>Task</title>{% endblock %}
 
 {% block content %}
-  <h1>
-    Task details
-  </h1>
+  <h1 class="text-break mb-2">{{ task.name }}</h1>
 
-  <p><strong>Name:</strong> {{ task.name }}</p>
-  {% if task.description %}
-    <p><strong>Description:</strong> {{ task.description }}</p>
-  {% endif %}
-  <p><strong>Type:</strong> {{ task.task_type }}</p>
-  <p><strong>Project:</strong> {{ task.project }}</p>
-  <p><strong>Tags:</strong></p>
-    {% for tag in task.tags.all %}
-      {{ tag }}
-    {% empty %}
-      No tags
-    {% endfor %}
-  <p><strong>Deadline:</strong> {{ task.deadline }}</p>
-  <p><strong>Priority:</strong> {{ task.priority }}</p>
-  <p><strong>Status:</strong> {{ task.state }}</p>
-  <p><strong>Depends on:</strong></p>
-    {% for prerequisite_task in prerequisite_tasks %}
-      {{ prerequisite_task.name }} - {{ prerequisite_task.task_type }}, project - {{ prerequisite_task.project }}
-      <form class="form-inline" action="{% url 'tasks:task-remove-dependency' prerequisite_task_pk=prerequisite_task.id project_pk=task.project.id pk=task.id %}" method="post">
-        {% csrf_token %}
-        <input class="btn btn-danger" type="submit" value="Remove">
-      </form>
-    {% empty %}
-      Task has no dependency
-    {% endfor %}
+  <p class="text-secondary mb-4">
+    Project:
+    <a
+      href="{% url 'projects:project-detail' team_pk=task.project.team.id pk=task.project.id %}"
+      class="text-decoration-none"
+    >
+      {{ task.project.name }}
+    </a>
+  </p>
 
-  <form class="form-inline" action="{% url 'tasks:task-participants' team_pk=task.project.team.id pk=task.id %}" method="get">
-    <input class="btn btn-primary" type="submit" value="Members">
-  </form>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a
+      href="{% url 'tasks:task-participants' team_pk=task.project.team.id pk=task.id %}"
+      class="btn btn-primary"
+    >
+      Participants
+    </a>
 
-  <form action="{% url 'tasks:task-add-dependency' project_pk=task.project.id pk=task.id %}" method="post">
+    <a
+      href="{% url 'tasks:task-update' project_pk=task.project.id pk=task.id %}"
+      class="btn btn-outline-primary"
+    >
+      Edit task
+    </a>
+  </div>
+
+  <div class="bg-white border rounded p-4 mb-4">
+    <h2 class="h5 mb-3">Description</h2>
+    <p class="text-secondary text-break mb-4">
+      {{ task.description|default:"No description yet." }}
+    </p>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <tbody>
+          <tr>
+            <th>Type</th>
+            <td>{{ task.task_type }}</td>
+          </tr>
+          <tr>
+            <th>Deadline</th>
+            <td>{{ task.deadline|date:"d M Y" }}</td>
+          </tr>
+          <tr>
+            <th>Priority</th>
+            <td>{{ task.get_priority_display }}</td>
+          </tr>
+          <tr>
+            <th>Status</th>
+            <td>{% include "includes/task_status.html" %}</td>
+          </tr>
+          <tr>
+            <th>Tags</th>
+            <td>
+              {% for tag in task.tags.all %}
+                <span class="badge bg-light text-secondary border">
+                  {{ tag.name }}
+                </span>
+              {% empty %}
+                <span class="text-secondary">No tags</span>
+              {% endfor %}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h2 class="h4 mb-3">Dependencies</h2>
+
+  <div class="table-responsive bg-white border rounded p-3 mb-4">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Prerequisite task</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for prerequisite_task in prerequisite_tasks %}
+          <tr>
+            <td>
+              <a
+                href="{% url 'tasks:task-detail' team_pk=prerequisite_task.project.team.id pk=prerequisite_task.id %}"
+                class="text-decoration-none"
+              >
+                {{ prerequisite_task.name }}
+              </a>
+            </td>
+            <td class="text-end">
+              <form
+                action="{% url 'tasks:task-remove-dependency' prerequisite_task_pk=prerequisite_task.id project_pk=task.project.id pk=task.id %}"
+                method="post"
+              >
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  Remove
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2" class="text-center text-secondary py-4">
+              This task has no dependencies.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <form
+    action="{% url 'tasks:task-add-dependency' project_pk=task.project.id pk=task.id %}"
+    method="post"
+    class="bg-white border rounded p-4 mb-4"
+  >
     {% csrf_token %}
-    <label>Choose prerequisite task:</label>
-    {% if dependency_form.non_field_errors %}
-        <div class="alert alert-danger">
-            {% for error in dependency_form.non_field_errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
-        </div>
-    {% endif %}
-    {{ dependency_form.prerequisite_task }} 
-    {% if dependency_form.prerequisite_task.errors %}
-      <div class="text-danger mt-1">
-          {% for error in dependency_form.prerequisite_task.errors %}
-              <small>{{ error }}</small>
-          {% endfor %}
-      </div>
-    {% endif %}
-    <input class="btn btn-primary" type="submit" value="Add dependency">
+    <h2 class="h5 mb-3">Add dependency</h2>
+    {{ dependency_form|crispy }}
+
+    <button type="submit" class="btn btn-primary">
+      Add dependency
+    </button>
   </form>
 
-  <form action="{% url 'tasks:task-update' project_pk=task.project.id pk=task.id %}" method="get">
-    <input class="btn btn-primary" type="submit" value="Edit">
-  </form>
-
-  <form class="form-inline" action="{% url 'tasks:task-list' team_pk=task.project.team.id %}" method="get">
-    <input class="btn btn-primary" type="submit" value="Return">
-  </form>
+  <a
+    href="{% url 'tasks:task-list' team_pk=task.project.team.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Back to tasks
+  </a>
 {% endblock %}
