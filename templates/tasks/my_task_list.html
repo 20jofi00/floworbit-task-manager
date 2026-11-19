@@ -1,13 +1,31 @@
 {% extends "base.html" %}
 {% load crispy_forms_filters %}
+{% block title %}<title>My tasks</title>{% endblock %}
 
 {% block content %}
-  <h1> My tasks </h1>
-    {% include "includes/search_form.html" %}
-  <h3>My Work in Progress</h3>
-  
-  {% include "includes/task_table.html" with tasks=incomplete_tasks empty_message="You have no tasks in progress" %}
+  <h1 class="mb-2">My tasks</h1>
+  <p class="text-secondary mb-4">
+    Your assignments across your teams.
+  </p>
 
-  <h3>My Work Completed</h3>
-  {% include "includes/task_table.html" with tasks=completed_tasks empty_message="You have not completed any tasks yet" %}
+  <form method="get" class="bg-white border rounded p-4 mb-4">
+    {{ search_form|crispy }}
+
+    <button type="submit" class="btn btn-primary">
+      Search
+    </button>
+
+    <a
+      href="{% url 'tasks:my-task-list' %}"
+      class="btn btn-outline-secondary"
+    >
+      Clear
+    </a>
+  </form>
+
+  <h2 class="h4 mb-3">My incomplete assignments</h2>
+  {% include "includes/task_table.html" with tasks=incomplete_tasks empty_message="You have no incomplete assignments." %}
+
+  <h2 class="h4 mb-3">My completed assignments</h2>
+  {% include "includes/task_table.html" with tasks=completed_tasks empty_message="You have no completed assignments yet." %}
 {% endblock %}
