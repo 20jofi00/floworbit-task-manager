@@ -1,9 +1,27 @@
 {% for task in tasks %}
-  <div>
-    <a href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">
+  <div class="bg-white border border-2 rounded p-3 mb-3 text-break
+  {% if task.state == 'blocked' %}
+    border-danger
+  {% elif task.state == 'completed' %}
+    border-success
+  {% elif task.state == 'in_progress' %}
+    border-warning
+  {% endif %}">
+    <a
+      href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}"
+      class="d-block fw-semibold text-decoration-none mb-2"
+    >
       {{ task.name }}
-    </a> - {{ task.deadline }}, {{ task.priority }}
+    </a>
+
+    <p class="small text-secondary mb-2">
+      {{ task.deadline|date:"d M Y" }} · {{ task.get_priority_display }}
+    </p>
+
+    {% include "includes/task_status.html" %}
   </div>
 {% empty %}
-  {{ empty_message }}
+  {% if empty_message %}
+    <p class="small text-secondary mb-0">{{ empty_message }}</p>
+  {% endif %}
 {% endfor %}
