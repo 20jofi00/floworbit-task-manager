@@ -1,13 +1,13 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 from projects.models import Project
 from tasks.models import Task, TaskType
 from teams.models import Team
 
 
-class ProjectViewTests(TestCase):
+class ProjectTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.worker = get_user_model().objects.create_user(
@@ -31,19 +31,20 @@ class ProjectViewTests(TestCase):
             team=cls.other_team,
         )
 
+        cls.task_type = TaskType.objects.create(name="Bug")
+
     def test_foreign_team_project_posts_are_rejected(self):
         self.client.force_login(self.worker)
 
-        response = self.client.post(
+        create_response = self.client.post(
             reverse(
                 "projects:project-create",
                 kwargs={"team_pk": self.other_team.pk},
             ),
-            {
-                "name": "New project",
-            },
+            {"name": "New project"},
         )
-        response_update = self.client.post(
+
+        update_response = self.client.post(
             reverse(
                 "projects:project-update",
                 kwargs={
@@ -53,52 +54,43 @@ class ProjectViewTests(TestCase):
             ),
             {
                 "name": "New project",
-                "description": "new project description",
+                "description": "New description",
             },
         )
 
+        self.assertEqual(create_response.status_code, 404)
+        self.assertEqual(update_response.status_code, 404)
+        self.assertFalse(Project.objects.filter(name="New project").exists())
+
         self.other_project.refresh_from_db()
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(response_update.status_code, 404)
-        self.assertFalse(Project.objects.filter(name="New project").exists())
-        self.assertEqual(self.other_project.team.pk, self.other_team.pk)
         self.assertEqual(self.other_project.name, "Other project")
         self.assertEqual(self.other_project.description, "")
+        self.assertEqual(self.other_project.team, self.other_team)
 
     def test_project_pagination_preserves_search(self):
-        Project.objects.create(
-            name="First project",
-            team=self.team,
-        )
-        Project.objects.create(
-            name="Second project",
-            team=self.team,
-        )
-        Project.objects.create(
-            name="Third project",
-            team=self.team,
-        )
-        Project.objects.create(
-            name="Fourth project",
-            team=self.team,
-        )
-        Project.objects.create(
-            name="Fifth project",
-            team=self.team,
-        )
-        Project.objects.create(
-            name="Six",
-            team=self.team,
-        )
+        names = [
+            "First project",
+            "Second project",
+            "Third project",
+            "Fourth project",
+            "Fifth project",
+            "Six",
+        ]
+
+        for name in names:
+            Project.objects.create(name=name, team=self.team)
 
         self.client.force_login(self.worker)
-        response = self.client.get(
-            reverse("projects:project-list", kwargs={"team_pk": self.team.pk}),
-            {"name": "Project"},
+
+        url = reverse(
+            "projects:project-list",
+            kwargs={"team_pk": self.team.pk},
         )
 
-        self.assertEqual(Project.objects.all().count(), 8)
+        response = self.client.get(url, {"name": "Project"})
+
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["paginator"].count, 6)
         self.assertEqual(len(response.context["project_list"]), 5)
 
@@ -110,42 +102,43 @@ class ProjectViewTests(TestCase):
             html=True,
         )
 
-        response2 = self.client.get(
-            reverse("projects:project-list", kwargs={"team_pk": self.team.pk})
-            + next_url,
+        next_response = self.client.get(url + next_url)
+
+        self.assertEqual(next_response.status_code, 200)
+        self.assertEqual(
+            len(next_response.context["project_list"]),
+            1,
+        )
+        self.assertEqual(
+            next_response.context["project_list"][0].name,
+            "Third project",
         )
 
-        self.assertEqual(response2.status_code, 200)
-        self.assertEqual(len(response2.context["project_list"]), 1)
-        self.assertEqual(response2.context["project_list"][0].name, "Third project")
-
     def test_project_progress_counts_completed_tasks(self):
-        task_type = TaskType.objects.create(name="test")
         Task.objects.create(
-            name="completed_task",
-            task_type=task_type,
+            name="Completed task",
+            task_type=self.task_type,
             project=self.project,
             deadline="2026-11-18",
-            priority="low",
             is_completed=True,
         )
 
         Task.objects.create(
-            name="first_uncompleted_task",
-            task_type=task_type,
+            name="First incomplete task",
+            task_type=self.task_type,
             project=self.project,
             deadline="2026-11-18",
-            priority="medium",
         )
+
         Task.objects.create(
-            name="second_uncompleted_task",
-            task_type=task_type,
+            name="Second incomplete task",
+            task_type=self.task_type,
             project=self.project,
             deadline="2026-11-18",
-            priority="low",
         )
 
         self.client.force_login(self.worker)
+
         response = self.client.get(
             reverse(
                 "projects:project-detail",
@@ -157,7 +150,9 @@ class ProjectViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-
         self.assertEqual(response.context["num_tasks"], 3)
         self.assertEqual(response.context["num_completed_tasks"], 1)
-        self.assertEqual(response.context["percent_of_completed_tasks"], 33.33)
+        self.assertEqual(
+            response.context["percent_of_completed_tasks"],
+            33.33,
+        )
