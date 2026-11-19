@@ -1,51 +1,76 @@
 {% extends "base.html" %}
+{% block title %}<title>Team</title>{% endblock %}
 
 {% block content %}
-  <h1>
-    Team details
-  </h1>
+  <h1 class="text-break mb-2">{{ team.name }}</h1>
 
-  <p><strong>Name:</strong> {{ team.name }}</p>
-  {% if team.description %}
-    <p><strong>Description:</strong> {{ team.description }}</p>
-  {% endif %}
+  <p class="text-secondary text-break mb-4">
+    {{ team.description|default:"No description yet." }}
+  </p>
 
-  <div class="ms-3">
-    <h4>Members</h4>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a
+      href="{% url 'projects:project-list' team_pk=team.id %}"
+      class="btn btn-primary"
+    >
+      Projects
+    </a>
 
-    {% for member in team.members.all %}
-      <div>
-        {% include "includes/worker_name.html" with worker=member %} - 
+    <a
+      href="{% url 'tasks:task-list' team_pk=team.id %}"
+      class="btn btn-primary"
+    >
+      Tasks
+    </a>
 
-        {% if member.position %}
-          <p><strong>Position:</strong> {{ member.position }}</p>
-        {% else %}
-          Member has no position
-        {% endif %}
-      </div>
-    {% empty %}
-      <p>No members!</p>
-    {% endfor %}
-    <br>
+    <a
+      href="{% url 'teams:team-dashboard' pk=team.id %}"
+      class="btn btn-outline-primary"
+    >
+      Dashboard
+    </a>
+
+    <a
+      href="{% url 'teams:team-workload' pk=team.id %}"
+      class="btn btn-outline-primary"
+    >
+      Workload
+    </a>
   </div>
 
-  <a href="{% url 'projects:project-list' team_pk=team.id%}" class="btn btn-primary">
-    Projects
-  </a>
+  <h2 class="h4 mb-3">Members</h2>
 
-  <a href="{% url 'tasks:task-list' team_pk=team.id %}" class="btn btn-primary">
-    Tasks
-  </a>
+  <div class="table-responsive bg-white border rounded p-3 mb-4">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Member</th>
+          <th>Position</th>
+        </tr>
+      </thead>
 
-  <a class="btn btn-primary" href="{% url 'teams:team-dashboard' pk=team.id %}">
-    Dashboard
-  </a>
+      <tbody>
+        {% for member in team.members.all %}
+          <tr>
+            <td class="fw-semibold">
+              {% include "includes/worker_name.html" with worker=member %}
+            </td>
+            <td class="text-secondary">
+              {{ member.position|default:"No position" }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2" class="text-center text-secondary py-4">
+              This team has no members yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-  <a class="btn btn-primary" href="{% url 'teams:team-workload' pk=team.id %}">
-    Workload
-  </a>
-
-  <a class="btn btn-primary" href="{% url 'teams:team-list' %}">
-    Return
+  <a href="{% url 'teams:team-list' %}" class="btn btn-outline-secondary">
+    Back to teams
   </a>
 {% endblock %}
