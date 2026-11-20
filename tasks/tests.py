@@ -518,3 +518,44 @@ class TaskTests(TestCase):
         self.task.refresh_from_db()
 
         self.assertEqual(self.task.project, self.project)
+
+    def test_board_groups_tasks_by_state(self):
+        assign_worker_to_task(self.task, self.worker)
+        set_assignment_completion(self.worker, self.task, True)
+
+        add_task_dependency(self.third_task, self.prerequisite)
+
+        active_task = Task.objects.create(
+            name="Active task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=self.today,
+        )
+        assign_worker_to_task(active_task, self.worker)
+
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "tasks:project-task-board",
+                kwargs={"project_pk": self.project.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["unassigned_tasks"],
+            [self.prerequisite],
+        )
+        self.assertEqual(
+            response.context["tasks_in_progress"],
+            [active_task],
+        )
+        self.assertEqual(
+            response.context["blocked_tasks"],
+            [self.third_task],
+        )
+        self.assertEqual(
+            response.context["completed_tasks"],
+            [self.task],
+        )
