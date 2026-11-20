@@ -495,3 +495,26 @@ class TaskTests(TestCase):
         self.task.refresh_from_db()
 
         self.assertEqual(self.task.project, another_project)
+
+    def test_invalid_task_transfers_are_rejected(self):
+        with self.assertRaises(ValidationError):
+            task_change_project(
+                task=self.task,
+                project=self.other_project,
+            )
+
+        another_project = Project.objects.create(
+            name="Another project",
+            team=self.team,
+        )
+        add_task_dependency(self.task, self.prerequisite)
+
+        with self.assertRaises(ValidationError):
+            task_change_project(
+                task=self.task,
+                project=another_project,
+            )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.project, self.project)
