@@ -13,6 +13,7 @@ from tasks.services import (
     get_task_display_state,
     remove_worker_from_task,
     set_assignment_completion,
+    task_change_project,
 )
 from teams.models import Team
 
@@ -479,3 +480,18 @@ class TaskTests(TestCase):
 
         self.assertTrue(self.task.is_completed)
         self.assertFalse(TaskDependency.objects.exists())
+
+    def test_task_can_move_to_project_in_same_team(self):
+        another_project = Project.objects.create(
+            name="Another project",
+            team=self.team,
+        )
+
+        task_change_project(
+            task=self.task,
+            project=another_project,
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.project, another_project)
