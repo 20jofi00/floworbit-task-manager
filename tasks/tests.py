@@ -437,3 +437,9 @@ class TaskTests(TestCase):
             add_task_dependency(self.third_task, self.task)
 
         self.assertEqual(TaskDependency.objects.count(), 2)
+
+    def test_task_cannot_depend_on_itself(self):
+        with self.assertRaises(ValidationError):
+            add_task_dependency(self.task, self.task)
+
+        self.assertFalse(TaskDependency.objects.exists())
