@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from projects.models import Project
@@ -66,4 +67,17 @@ class TaskTests(TestCase):
             project=cls.other_project,
             task_type=cls.task_type,
             deadline=cls.today,
+        )
+
+    def test_task_list_requires_login(self):
+        url = reverse(
+            "tasks:task-list",
+            kwargs={"team_pk": self.team.pk},
+        )
+
+        response = self.client.get(url)
+
+        self.assertRedirects(
+            response,
+            f"{reverse('login')}?next={url}",
         )
