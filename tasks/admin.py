@@ -21,6 +21,18 @@ class TaskAdmin(admin.ModelAdmin):
         "is_completed",
     )
 
+    def delete_model(self, request, obj):
+        dependent_tasks = list(
+            Task.objects.filter(
+                dependency_links__prerequisite_task=obj,
+            ).distinct()
+        )
+
+        super().delete_model(request, obj)
+
+        for task in dependent_tasks:
+            propagate_task_completion(task=task)
+
 
 @admin.register(TaskAssignment)
 class TaskAssignmentAdmin(admin.ModelAdmin):
