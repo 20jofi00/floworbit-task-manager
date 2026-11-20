@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from projects.models import Project
-from tasks.models import Task, TaskType
+from tasks.models import Task, TaskAssignment, TaskType
 from teams.models import Team
 
 
@@ -97,3 +97,65 @@ class TaskTests(TestCase):
             response.context["task_list"],
             [self.task, self.prerequisite, self.third_task],
         )
+
+    def test_outsider_cannot_view_or_change_tasks(self):
+        self.client.force_login(self.outsider)
+
+        detail_response = self.client.get(
+            reverse(
+                "tasks:task-detail",
+                kwargs={"team_pk": self.team.pk, "pk": self.task.pk},
+            )
+        )
+
+        create_response = self.client.post(
+            reverse(
+                "tasks:task-create",
+                kwargs={"project_pk": self.project.pk},
+            ),
+            {
+                "name": "Unauthorized task",
+                "task_type": self.task_type.pk,
+                "deadline": self.today.isoformat(),
+                "priority": "high",
+            },
+        )
+
+        update_response = self.client.post(
+            reverse(
+                "tasks:task-update",
+                kwargs={
+                    "project_pk": self.project.pk,
+                    "pk": self.task.pk,
+                },
+            ),
+            {
+                "name": "Unauthorized change",
+                "task_type": self.task_type.pk,
+                "project": self.project.pk,
+                "deadline": self.today.isoformat(),
+                "priority": "high",
+            },
+        )
+
+        assignment_response = self.client.post(
+            reverse(
+                "tasks:task-add-worker",
+                kwargs={
+                    "project_pk": self.project.pk,
+                    "pk": self.task.pk,
+                },
+            ),
+            {"worker": self.outsider.pk},
+        )
+
+        self.assertEqual(detail_response.status_code, 404)
+        self.assertEqual(create_response.status_code, 404)
+        self.assertEqual(update_response.status_code, 404)
+        self.assertEqual(assignment_response.status_code, 404)
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.name, "Main task")
+        self.assertFalse(Task.objects.filter(name="Unauthorized task").exists())
+        self.assertFalse(TaskAssignment.objects.filter(task=self.task).exists())
