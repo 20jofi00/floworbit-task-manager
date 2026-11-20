@@ -1,7 +1,7 @@
 [project]
 name = "floworbit-task-manager"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Django task manager for IT teams with projects, shared assignments, task dependencies, and progress tracking"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
