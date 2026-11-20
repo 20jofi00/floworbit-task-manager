@@ -443,3 +443,20 @@ class TaskTests(TestCase):
             add_task_dependency(self.task, self.task)
 
         self.assertFalse(TaskDependency.objects.exists())
+
+    def test_dependency_between_projects_is_rejected(self):
+        another_project = Project.objects.create(
+            name="Another project",
+            team=self.team,
+        )
+        another_task = Task.objects.create(
+            name="Another task",
+            project=another_project,
+            task_type=self.task_type,
+            deadline=self.today,
+        )
+
+        with self.assertRaises(ValidationError):
+            add_task_dependency(self.task, another_task)
+
+        self.assertFalse(TaskDependency.objects.exists())
