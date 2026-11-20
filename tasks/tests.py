@@ -9,6 +9,7 @@ from tasks.models import Task, TaskAssignment, TaskType
 from tasks.services import (
     assign_worker_to_task,
     get_task_display_state,
+    set_assignment_completion,
 )
 from teams.models import Team
 
@@ -329,3 +330,26 @@ class TaskTests(TestCase):
             ).count(),
             1,
         )
+
+    def test_task_completion_requires_all_workers(self):
+        assign_worker_to_task(self.task, self.worker)
+        assign_worker_to_task(self.task, self.second_worker)
+
+        set_assignment_completion(self.worker, self.task, True)
+
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_completed)
+
+        set_assignment_completion(self.second_worker, self.task, True)
+
+        self.task.refresh_from_db()
+        self.assertTrue(self.task.is_completed)
+        self.assertEqual(
+            get_task_display_state(task=self.task),
+            "completed",
+        )
+
+        set_assignment_completion(self.worker, self.task, False)
+
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_completed)
