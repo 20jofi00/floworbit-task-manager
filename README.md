@@ -126,3 +126,36 @@ Register a worker account on the signup page.
 Then sign in to the admin panel using the administrator account. Create a team and add the worker to its members. Create at least one task type. You can also add positions and tags.
 
 Sign in as the worker, open the team, and create a project. Add tasks to the project and assign teammates through each task's Participants page.
+
+## Running tests
+
+Run the complete test suite:
+
+```bash
+uv run python manage.py test
+```
+
+You can also run tests for a specific application:
+
+```bash
+uv run python manage.py test accounts
+uv run python manage.py test projects
+uv run python manage.py test teams
+uv run python manage.py test tasks
+```
+
+Run Django's system checks:
+
+```bash
+uv run python manage.py check
+```
+
+## Project structure
+
+The accounts application contains workers, positions, and registration.
+
+The teams application handles team membership, dashboards, and workload pages.
+
+The projects application handles projects, their forms, and project progress.
+
+The tasks application handles tasks, assignments, dependencies, filters, task boards, and calendars.
