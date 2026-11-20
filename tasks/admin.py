@@ -33,6 +33,20 @@ class TaskAdmin(admin.ModelAdmin):
         for task in dependent_tasks:
             propagate_task_completion(task=task)
 
+    def delete_queryset(self, request, queryset):
+        dependent_tasks = list(
+            Task.objects.filter(
+                dependency_links__prerequisite_task__in=queryset,
+            )
+            .exclude(pk__in=queryset)
+            .distinct()
+        )
+
+        super().delete_queryset(request, queryset)
+
+        for task in dependent_tasks:
+            propagate_task_completion(task=task)
+
 
 @admin.register(TaskAssignment)
 class TaskAssignmentAdmin(admin.ModelAdmin):
