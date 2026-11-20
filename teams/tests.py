@@ -1,8 +1,14 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
+from projects.models import Project
+from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
 from teams.models import Team
+from teams.service import get_team_dashboard_stats
 
 
 class TeamTests(TestCase):
@@ -22,6 +28,13 @@ class TeamTests(TestCase):
         cls.team.members.add(cls.worker, cls.second_worker)
 
         cls.other_team = Team.objects.create(name="Other team")
+
+        cls.project = Project.objects.create(
+            name="Main project",
+            team=cls.team,
+        )
+
+        cls.task_type = TaskType.objects.create(name="Bug")
 
     def test_team_list_requires_login(self):
         url = reverse("teams:team-list")
@@ -112,3 +125,167 @@ class TeamTests(TestCase):
         self.assertEqual(first_response.context["paginator"].count, 6)
         self.assertEqual(len(first_response.context["team_list"]), 5)
         self.assertEqual(len(second_response.context["team_list"]), 1)
+
+    def test_empty_team_has_zero_dashboard_stats(self):
+        result = get_team_dashboard_stats(team=self.team)
+
+        self.assertEqual(
+            result["stats"],
+            {
+                "total_tasks": 0,
+                "completed_tasks": 0,
+                "open_tasks": 0,
+                "blocked_tasks": 0,
+                "overdue_tasks": 0,
+            },
+        )
+
+        project = result["projects"][0]
+
+        self.assertEqual(project.total_tasks, 0)
+        self.assertEqual(project.completed_tasks, 0)
+        self.assertEqual(project.progress_percent, 0)
+
+    def test_dashboard_counts_task_states_and_overdue_tasks(self):
+        today = timezone.localdate()
+        yesterday = today - timedelta(days=1)
+
+        unassigned_task = Task.objects.create(
+            name="Unassigned task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=yesterday,
+        )
+
+        active_task = Task.objects.create(
+            name="Active task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=today,
+        )
+        TaskAssignment.objects.create(
+            task=active_task,
+            worker=self.worker,
+        )
+
+        Task.objects.create(
+            name="Completed task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=yesterday,
+            is_completed=True,
+        )
+
+        blocked_task = Task.objects.create(
+            name="Blocked task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=yesterday,
+        )
+        TaskDependency.objects.create(
+            dependent_task=blocked_task,
+            prerequisite_task=unassigned_task,
+        )
+
+        other_project = Project.objects.create(
+            name="Other project",
+            team=self.other_team,
+        )
+        Task.objects.create(
+            name="Foreign task",
+            project=other_project,
+            task_type=self.task_type,
+            deadline=yesterday,
+        )
+
+        result = get_team_dashboard_stats(team=self.team)
+
+        self.assertEqual(
+            result["stats"],
+            {
+                "total_tasks": 4,
+                "completed_tasks": 1,
+                "open_tasks": 2,
+                "blocked_tasks": 1,
+                "overdue_tasks": 2,
+            },
+        )
+
+        project = result["projects"][0]
+
+        self.assertEqual(project.total_tasks, 4)
+        self.assertEqual(project.completed_tasks, 1)
+        self.assertEqual(project.progress_percent, 25)
+
+    def test_workload_counts_only_team_assignments(self):
+        today = timezone.localdate()
+
+        incomplete_task = Task.objects.create(
+            name="Incomplete task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=today,
+        )
+        TaskAssignment.objects.create(
+            task=incomplete_task,
+            worker=self.worker,
+        )
+
+        completed_assignment_task = Task.objects.create(
+            name="Task with completed personal work",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=today,
+        )
+        TaskAssignment.objects.create(
+            task=completed_assignment_task,
+            worker=self.worker,
+            is_completed=True,
+        )
+
+        self.other_team.members.add(self.worker)
+
+        other_project = Project.objects.create(
+            name="Other project",
+            team=self.other_team,
+        )
+        other_task = Task.objects.create(
+            name="Other team task",
+            project=other_project,
+            task_type=self.task_type,
+            deadline=today,
+        )
+        TaskAssignment.objects.create(
+            task=other_task,
+            worker=self.worker,
+        )
+
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "teams:team-workload",
+                kwargs={"pk": self.team.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        members = {member.pk: member for member in response.context["members"]}
+
+        self.assertEqual(
+            members[self.worker.pk].incomplete_assignments,
+            1,
+        )
+        self.assertEqual(
+            members[self.worker.pk].completed_assignments,
+            1,
+        )
+        self.assertEqual(
+            members[self.second_worker.pk].incomplete_assignments,
+            0,
+        )
+        self.assertEqual(
+            members[self.second_worker.pk].completed_assignments,
+            0,
+        )
