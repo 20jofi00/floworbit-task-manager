@@ -81,3 +81,19 @@ class TaskTests(TestCase):
             response,
             f"{reverse('login')}?next={url}",
         )
+
+    def test_task_list_shows_only_selected_team_tasks(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "tasks:task-list",
+                kwargs={"team_pk": self.team.pk},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerySetEqual(
+            response.context["task_list"],
+            [self.task, self.prerequisite, self.third_task],
+        )
