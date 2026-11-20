@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -558,4 +560,48 @@ class TaskTests(TestCase):
         self.assertEqual(
             response.context["completed_tasks"],
             [self.task],
+        )
+
+    def test_calendar_groups_tasks_by_deadline(self):
+        deadline = date(2026, 11, 18)
+
+        self.task.deadline = deadline
+        self.task.save()
+
+        self.prerequisite.deadline = deadline
+        self.prerequisite.save()
+
+        self.third_task.deadline = date(2026, 12, 18)
+        self.third_task.save()
+
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "tasks:project-task-calendar",
+                kwargs={"project_pk": self.project.pk},
+            ),
+            {"year": 2026, "month": 11},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["prev_month"],
+            date(2026, 10, 1),
+        )
+        self.assertEqual(
+            response.context["next_month"],
+            date(2026, 12, 1),
+        )
+
+        calendar_tasks = []
+
+        for week in response.context["calendar_weeks"]:
+            for day in week:
+                if day["date"] == deadline:
+                    calendar_tasks.extend(day["tasks"])
+
+        self.assertCountEqual(
+            calendar_tasks,
+            [self.task, self.prerequisite],
         )
