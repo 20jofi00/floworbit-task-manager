@@ -7,6 +7,7 @@ from django.utils import timezone
 from projects.models import Project
 from tasks.models import Task, TaskAssignment, TaskType
 from tasks.services import (
+    add_task_dependency,
     assign_worker_to_task,
     get_task_display_state,
     remove_worker_from_task,
@@ -385,4 +386,45 @@ class TaskTests(TestCase):
         self.assertEqual(
             get_task_display_state(task=self.task),
             "in_progress",
+        )
+
+    def test_completion_changes_propagate_through_dependencies(self):
+        assign_worker_to_task(self.prerequisite, self.worker)
+        assign_worker_to_task(self.task, self.worker)
+        assign_worker_to_task(self.third_task, self.worker)
+
+        add_task_dependency(self.task, self.prerequisite)
+        add_task_dependency(self.third_task, self.task)
+
+        set_assignment_completion(self.worker, self.task, True)
+        set_assignment_completion(self.worker, self.third_task, True)
+
+        self.task.refresh_from_db()
+        self.third_task.refresh_from_db()
+
+        self.assertFalse(self.task.is_completed)
+        self.assertFalse(self.third_task.is_completed)
+        self.assertEqual(
+            get_task_display_state(task=self.task),
+            "blocked",
+        )
+
+        set_assignment_completion(self.worker, self.prerequisite, True)
+
+        self.task.refresh_from_db()
+        self.third_task.refresh_from_db()
+
+        self.assertTrue(self.task.is_completed)
+        self.assertTrue(self.third_task.is_completed)
+
+        set_assignment_completion(self.worker, self.prerequisite, False)
+
+        self.task.refresh_from_db()
+        self.third_task.refresh_from_db()
+
+        self.assertFalse(self.task.is_completed)
+        self.assertFalse(self.third_task.is_completed)
+        self.assertEqual(
+            get_task_display_state(task=self.third_task),
+            "blocked",
         )
