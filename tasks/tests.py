@@ -5,6 +5,10 @@ from django.utils import timezone
 
 from projects.models import Project
 from tasks.models import Task, TaskAssignment, TaskType
+from tasks.services import (
+    assign_worker_to_task,
+    get_task_display_state,
+)
 from teams.models import Team
 
 
@@ -280,4 +284,18 @@ class TaskTests(TestCase):
         self.assertEqual(
             response.context["incomplete_tasks"],
             [self.prerequisite],
+        )
+
+    def test_team_member_can_be_assigned(self):
+        assignment = assign_worker_to_task(
+            task=self.task,
+            worker=self.worker,
+        )
+
+        self.assertEqual(assignment.task, self.task)
+        self.assertEqual(assignment.worker, self.worker)
+        self.assertFalse(assignment.is_completed)
+        self.assertEqual(
+            get_task_display_state(task=self.task),
+            "in_progress",
         )
