@@ -605,3 +605,16 @@ class TaskTests(TestCase):
             calendar_tasks,
             [self.task, self.prerequisite],
         )
+
+    def test_calendar_rejects_invalid_month(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "tasks:project-task-calendar",
+                kwargs={"project_pk": self.project.pk},
+            ),
+            {"year": 2026, "month": 13},
+        )
+
+        self.assertEqual(response.status_code, 404)
