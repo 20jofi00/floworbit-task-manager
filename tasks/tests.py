@@ -194,3 +194,41 @@ class TaskTests(TestCase):
         self.assertEqual(task.description, "Task description")
         self.assertEqual(task.priority, "high")
         self.assertFalse(task.is_completed)
+
+    def test_task_update_saves_changes(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.post(
+            reverse(
+                "tasks:task-update",
+                kwargs={
+                    "project_pk": self.project.pk,
+                    "pk": self.task.pk,
+                },
+            ),
+            {
+                "name": "Updated task",
+                "description": "Updated description",
+                "task_type": self.task_type.pk,
+                "project": self.project.pk,
+                "deadline": self.today.isoformat(),
+                "priority": "low",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "projects:project-detail",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": self.project.pk,
+                },
+            ),
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.name, "Updated task")
+        self.assertEqual(self.task.description, "Updated description")
+        self.assertEqual(self.task.priority, "low")
