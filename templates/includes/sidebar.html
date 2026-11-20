@@ -1,0 +1,36 @@
+<div class="d-flex flex-column h-100 bg-dark text-white p-3">
+  <a
+    href="{% url 'teams:team-list' %}"
+    class="bg-primary text-white text-center text-decoration-none rounded p-3 mb-4 fs-4 fw-bold"
+  >
+    FlowOrbit
+  </a>
+
+  <p class="text-white-50 small mb-2">Workspace</p>
+
+  <a
+    href="{% url 'teams:team-list' %}"
+    class="btn btn-outline-light text-start mb-2"
+  >
+    Teams
+  </a>
+
+  <a
+    href="{% url 'tasks:my-task-list' %}"
+    class="btn btn-outline-light text-start mb-4"
+  >
+    My Tasks
+  </a>
+
+  <div class="mt-auto border-top pt-3">
+    <p class="small text-white-50 mb-1">Signed in as</p>
+    <p class="text-break">{{ user.get_username }}</p>
+
+    <form action="{% url 'logout' %}" method="post">
+      {% csrf_token %}
+      <button class="btn btn-secondary w-100" type="submit">
+        Log out
+      </button>
+    </form>
+  </div>
+</div>

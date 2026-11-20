@@ -1,0 +1,10 @@
+
+{% if task.state == "blocked" %}
+  <span class="badge bg-danger">Blocked</span>
+{% elif task.state == "completed" %}
+  <span class="badge bg-success">Completed</span>
+{% elif task.state == "in_progress" %}
+  <span class="badge bg-warning text-dark">In progress</span>
+{% else %}
+  <span class="badge bg-white text-dark border">Unassigned</span>
+{% endif %}

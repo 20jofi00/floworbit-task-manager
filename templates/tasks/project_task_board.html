@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}<title>Task board</title>{% endblock %}
+
+{% block content %}
+  <h1 class="mb-2">Task board</h1>
+  <p class="text-secondary text-break mb-4">{{ project.name }}</p>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a
+      href="{% url 'tasks:task-create' project_pk=project.id %}"
+      class="btn btn-primary"
+    >
+      Create task
+    </a>
+
+    <a
+      href="{% url 'tasks:project-task-calendar' project_pk=project.id %}"
+      class="btn btn-outline-primary"
+    >
+      Calendar
+    </a>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xxl-3">
+      <h2 class="h5 mb-3">Unassigned</h2>
+      {% include "includes/task_card.html" with tasks=unassigned_tasks empty_message="No unassigned tasks." %}
+    </div>
+
+    <div class="col-12 col-md-6 col-xxl-3">
+      <h2 class="h5 mb-3">In progress</h2>
+      {% include "includes/task_card.html" with tasks=tasks_in_progress empty_message="No tasks in progress." %}
+    </div>
+
+    <div class="col-12 col-md-6 col-xxl-3">
+      <h2 class="h5 mb-3">Blocked</h2>
+      {% include "includes/task_card.html" with tasks=blocked_tasks empty_message="No blocked tasks." %}
+    </div>
+
+    <div class="col-12 col-md-6 col-xxl-3">
+      <h2 class="h5 mb-3">Completed</h2>
+      {% include "includes/task_card.html" with tasks=completed_tasks empty_message="No completed tasks." %}
+    </div>
+  </div>
+
+  <a
+    href="{% url 'projects:project-detail' team_pk=project.team.id pk=project.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Back to project
+  </a>
+{% endblock %}

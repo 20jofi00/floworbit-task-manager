@@ -1,0 +1,49 @@
+{% load crispy_forms_filters %}
+
+<form method="get" class="bg-white border rounded p-4 mb-4">
+  {{ search_form.name|as_crispy_field }}
+
+  <button type="submit" class="btn btn-primary">
+    Search
+  </button>
+
+  <a
+    href="{% url 'tasks:task-list' team_pk=team.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Clear
+  </a>
+
+  <details class="border-top mt-3 pt-3"
+  {% if advanced_filters_active %}
+    open
+  {% endif %}>
+    <summary class="text-primary mb-3">Advanced filters</summary>
+
+    <div class="row">
+      <div class="col-12 col-lg-4">
+        {{ search_form.projects|as_crispy_field }}
+      </div>
+
+      <div class="col-12 col-lg-4">
+        {{ search_form.task_types|as_crispy_field }}
+      </div>
+
+      <div class="col-12 col-lg-4">
+        {{ search_form.task_tags|as_crispy_field }}
+      </div>
+
+      <div class="col-12 col-lg-6">
+        {{ search_form.priority|as_crispy_field }}
+      </div>
+
+      <div class="col-12 col-lg-6">
+        {{ search_form.deadline_before|as_crispy_field }}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      Apply filters
+    </button>
+  </details>
+</form>

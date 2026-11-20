@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+{% block title %}<title>Participants</title>{% endblock %}
+
+{% block content %}
+  <h1 class="mb-2">Participants</h1>
+  <p class="text-secondary text-break mb-4">{{ task.name }}</p>
+
+  {% if my_assignment %}
+    <form
+      action="{% url 'tasks:worker-task-state' project_pk=task.project.id pk=task.id %}"
+      method="post"
+      class="bg-white border rounded p-4 mb-4"
+    >
+      {% csrf_token %}
+      <h2 class="h5 mb-3">My assignment</h2>
+
+      {% if my_assignment.is_completed %}
+        <p class="text-success">You have completed your part.</p>
+        <button type="submit" class="btn btn-outline-secondary">
+          Mark as incomplete
+        </button>
+      {% else %}
+        <p class="text-secondary">Mark your part as completed when it is ready.</p>
+        <button type="submit" class="btn btn-success">
+          Mark as completed
+        </button>
+      {% endif %}
+    </form>
+  {% endif %}
+
+  <div class="table-responsive bg-white border rounded p-3 mb-4">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Member</th>
+          <th>Personal status</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for assignment in assignments %}
+          <tr>
+            <td class="fw-semibold">
+              {% include "includes/worker_name.html" with worker=assignment.worker %}
+            </td>
+            <td>
+              {% if assignment.is_completed %}
+                <span class="badge bg-success">Completed</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">In progress</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <form
+                action="{% url 'tasks:task-remove-worker' project_pk=task.project.id pk=task.id worker_pk=assignment.worker.id %}"
+                method="post"
+              >
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  Remove
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center text-secondary py-4">
+              This task has no participants yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <form
+    action="{% url 'tasks:task-add-worker' project_pk=task.project.id pk=task.id %}"
+    method="post"
+    class="bg-white border rounded p-4 mb-4"
+  >
+    {% csrf_token %}
+    <h2 class="h5 mb-3">Add participant</h2>
+    {{ form|crispy }}
+
+    <button type="submit" class="btn btn-primary">
+      Add participant
+    </button>
+  </form>
+
+  <a
+    href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Back to task
+  </a>
+{% endblock %}

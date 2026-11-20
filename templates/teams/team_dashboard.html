@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}<title>Dashboard</title>{% endblock %}
+
+{% block content %}
+  <h1 class="mb-2">Dashboard</h1>
+  <p class="text-secondary text-break mb-4">{{ team.name }}</p>
+
+  <div class="d-flex flex-wrap gap-3 mb-4">
+    <div class="bg-white border rounded text-center flex-grow-1 p-4">
+      <p class="h2 fw-bold mb-1">{{ stats.total_tasks }}</p>
+      <p class="text-secondary mb-0">Total</p>
+    </div>
+
+    <div class="bg-white border border-success rounded text-center flex-grow-1 p-4">
+      <p class="h2 fw-bold text-success mb-1">{{ stats.completed_tasks }}</p>
+      <p class="text-secondary mb-0">Completed</p>
+    </div>
+
+    <div class="bg-white border rounded text-center flex-grow-1 p-4">
+      <p class="h2 fw-bold mb-1">{{ stats.open_tasks }}</p>
+      <p class="text-secondary mb-0">Open</p>
+    </div>
+
+    <div class="bg-white border border-danger rounded text-center flex-grow-1 p-4">
+      <p class="h2 fw-bold text-danger mb-1">{{ stats.blocked_tasks }}</p>
+      <p class="text-secondary mb-0">Blocked</p>
+    </div>
+
+    <div class="bg-white border border-warning rounded text-center flex-grow-1 p-4">
+      <p class="h2 fw-bold text-warning mb-1">{{ stats.overdue_tasks }}</p>
+      <p class="text-secondary mb-0">Overdue</p>
+    </div>
+  </div>
+
+  <h2 class="h4 mb-3">Projects</h2>
+
+  <div class="table-responsive bg-white border rounded p-3 mb-4">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Project</th>
+          <th class="text-center">Completed tasks</th>
+          <th class="text-center">Progress</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for project in projects %}
+          <tr>
+            <td>
+              <a
+                href="{% url 'projects:project-detail' team_pk=team.id pk=project.id %}"
+                class="fw-semibold text-decoration-none"
+              >
+                {{ project.name }}
+              </a>
+            </td>
+
+            <td class="text-center">
+              {{ project.completed_tasks }} of {{ project.total_tasks }}
+            </td>
+
+            <td class="text-center fw-semibold">
+              {{ project.progress_percent }}%
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="3" class="text-center text-secondary py-4">
+              This team has no projects yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <a
+    href="{% url 'teams:team-detail' pk=team.id %}"
+    class="btn btn-outline-secondary"
+  >
+    Back to team
+  </a>
+{% endblock %}
