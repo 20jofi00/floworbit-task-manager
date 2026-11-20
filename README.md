@@ -50,47 +50,79 @@ Forms are displayed using django-crispy-forms and crispy-bootstrap5. Environment
 
 ## Requirements
 
-- Python 3.13 or newer
-- [uv](https://docs.astral.sh/uv/)
+Install Python 3.13 or newer, Git, and [uv](https://docs.astral.sh/uv/getting-started/installation/).
 
-## Local setup
+An internet connection is needed to load Bootstrap from its CDN.
 
-Install the project dependencies:
+## Installation
 
-```powershell
+Clone the develop branch and open the project directory:
+
+```bash
+git clone --branch develop https://github.com/20jofi00/floworbit-task-manager.git
+cd floworbit-task-manager
+```
+
+Install the dependencies:
+
+```bash
 uv sync
 ```
 
-Create a local environment file from the example:
+Create a local environment file from the example.
+
+On Windows PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Generate a new Django secret key:
+On macOS or Linux:
 
-```powershell
+```bash
+cp .env.example .env
+```
+
+Generate a Django secret key:
+
+```bash
 uv run python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-Put the generated value after `DJANGO_SECRET_KEY=` in `.env`. Keep this file private and never commit it.
+Open `.env` and paste the generated key inside quotes:
+
+```dotenv
+DJANGO_SECRET_KEY="paste-generated-key-here"
+```
+
+The `.env` file is excluded from Git.
 
 Apply the database migrations:
 
-```powershell
+```bash
 uv run python manage.py migrate
 ```
 
 Create an administrator account:
 
-```powershell
+```bash
 uv run python manage.py createsuperuser
 ```
 
 Start the development server:
 
-```powershell
+```bash
 uv run python manage.py runserver
 ```
 
-Open the admin panel at http://127.0.0.1:8000/admin/ and sign in with the administrator account.
+Open the app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+
+The admin panel is available at [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+
+## Getting started
+
+Register a worker account on the signup page.
+
+Then sign in to the admin panel using the administrator account. Create a team and add the worker to its members. Create at least one task type. You can also add positions and tags.
+
+Sign in as the worker, open the team, and create a project. Add tasks to the project and assign teammates through each task's Participants page.
