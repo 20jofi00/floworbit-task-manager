@@ -372,3 +372,17 @@ class TaskTests(TestCase):
             get_task_display_state(task=self.task),
             "unassigned",
         )
+
+    def test_adding_worker_reopens_completed_task(self):
+        assign_worker_to_task(self.task, self.worker)
+        set_assignment_completion(self.worker, self.task, True)
+
+        assign_worker_to_task(self.task, self.second_worker)
+
+        self.task.refresh_from_db()
+
+        self.assertFalse(self.task.is_completed)
+        self.assertEqual(
+            get_task_display_state(task=self.task),
+            "in_progress",
+        )
