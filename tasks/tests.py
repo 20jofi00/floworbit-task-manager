@@ -309,3 +309,23 @@ class TaskTests(TestCase):
             )
 
         self.assertFalse(TaskAssignment.objects.filter(task=self.task).exists())
+
+    def test_duplicate_assignment_is_rejected(self):
+        assign_worker_to_task(
+            task=self.task,
+            worker=self.worker,
+        )
+
+        with self.assertRaises(ValidationError):
+            assign_worker_to_task(
+                task=self.task,
+                worker=self.worker,
+            )
+
+        self.assertEqual(
+            TaskAssignment.objects.filter(
+                task=self.task,
+                worker=self.worker,
+            ).count(),
+            1,
+        )
