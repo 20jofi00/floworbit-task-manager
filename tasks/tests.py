@@ -9,6 +9,7 @@ from tasks.models import Task, TaskAssignment, TaskType
 from tasks.services import (
     assign_worker_to_task,
     get_task_display_state,
+    remove_worker_from_task,
     set_assignment_completion,
 )
 from teams.models import Team
@@ -353,3 +354,21 @@ class TaskTests(TestCase):
 
         self.task.refresh_from_db()
         self.assertFalse(self.task.is_completed)
+
+    def test_removing_last_assignment_makes_task_unassigned(self):
+        assign_worker_to_task(self.task, self.worker)
+        set_assignment_completion(self.worker, self.task, True)
+
+        remove_worker_from_task(
+            task=self.task,
+            worker=self.worker,
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertFalse(self.task.is_completed)
+        self.assertFalse(TaskAssignment.objects.filter(task=self.task).exists())
+        self.assertEqual(
+            get_task_display_state(task=self.task),
+            "unassigned",
+        )
