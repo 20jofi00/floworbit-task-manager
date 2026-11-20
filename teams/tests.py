@@ -1,14 +1,16 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from projects.models import Project
 from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
+from teams.forms import TeamAdminForm
 from teams.models import Team
-from teams.service import get_team_dashboard_stats
+from teams.service import get_team_dashboard_stats, remove_worker_from_team
 
 
 class TeamTests(TestCase):
@@ -289,3 +291,57 @@ class TeamTests(TestCase):
             members[self.second_worker.pk].completed_assignments,
             0,
         )
+
+    def test_worker_without_assignments_can_be_removed(self):
+        remove_worker_from_team(
+            worker=self.worker,
+            team=self.team,
+        )
+
+        self.assertFalse(self.team.members.filter(pk=self.worker.pk).exists())
+        self.assertTrue(get_user_model().objects.filter(pk=self.worker.pk).exists())
+
+    def test_worker_with_assignments_cannot_be_removed(self):
+        task = Task.objects.create(
+            name="Assigned task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=timezone.localdate(),
+        )
+        TaskAssignment.objects.create(
+            task=task,
+            worker=self.worker,
+        )
+
+        with self.assertRaises(ValidationError):
+            remove_worker_from_team(
+                worker=self.worker,
+                team=self.team,
+            )
+
+        self.assertTrue(self.team.members.filter(pk=self.worker.pk).exists())
+
+    def test_admin_form_rejects_removing_assigned_worker(self):
+        task = Task.objects.create(
+            name="Assigned task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=timezone.localdate(),
+        )
+        TaskAssignment.objects.create(
+            task=task,
+            worker=self.worker,
+        )
+
+        form = TeamAdminForm(
+            data={
+                "name": self.team.name,
+                "description": "",
+                "members": [self.second_worker.pk],
+            },
+            instance=self.team,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("members", form.errors)
+        self.assertTrue(self.team.members.filter(pk=self.worker.pk).exists())
