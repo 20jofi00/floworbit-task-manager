@@ -252,3 +252,32 @@ class TaskTests(TestCase):
             response.context["task_list"],
             [self.task],
         )
+
+    def test_my_tasks_are_grouped_by_personal_completion(self):
+        TaskAssignment.objects.create(
+            task=self.task,
+            worker=self.worker,
+            is_completed=True,
+        )
+        TaskAssignment.objects.create(
+            task=self.prerequisite,
+            worker=self.worker,
+        )
+        TaskAssignment.objects.create(
+            task=self.third_task,
+            worker=self.second_worker,
+        )
+
+        self.client.force_login(self.worker)
+
+        response = self.client.get(reverse("tasks:my-task-list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context["completed_tasks"],
+            [self.task],
+        )
+        self.assertEqual(
+            response.context["incomplete_tasks"],
+            [self.prerequisite],
+        )
