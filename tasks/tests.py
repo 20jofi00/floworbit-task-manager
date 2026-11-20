@@ -642,3 +642,33 @@ class TaskTests(TestCase):
 
         self.task.refresh_from_db()
         self.assertTrue(self.task.is_completed)
+
+    def test_admin_bulk_deletion_recalculates_remaining_task(self):
+        self.worker.is_staff = True
+        self.worker.is_superuser = True
+        self.worker.save()
+        self.client.force_login(self.worker)
+
+        assign_worker_to_task(self.third_task, self.worker)
+        add_task_dependency(self.task, self.prerequisite)
+        add_task_dependency(self.third_task, self.task)
+        set_assignment_completion(self.worker, self.third_task, True)
+
+        self.third_task.refresh_from_db()
+        self.assertFalse(self.third_task.is_completed)
+
+        response = self.client.post(
+            reverse("admin:tasks_task_changelist"),
+            {
+                "action": "delete_selected",
+                "_selected_action": [self.prerequisite.pk, self.task.pk],
+                "post": "yes",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Task.objects.filter(pk=self.prerequisite.pk).exists())
+        self.assertFalse(Task.objects.filter(pk=self.task.pk).exists())
+
+        self.third_task.refresh_from_db()
+        self.assertTrue(self.third_task.is_completed)
