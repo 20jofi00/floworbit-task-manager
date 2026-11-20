@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from projects.models import Project
-from tasks.models import Task, TaskAssignment, TaskType
+from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
 from tasks.services import (
     add_task_dependency,
     assign_worker_to_task,
@@ -428,3 +428,12 @@ class TaskTests(TestCase):
             get_task_display_state(task=self.third_task),
             "blocked",
         )
+
+    def test_dependency_cycle_is_rejected(self):
+        add_task_dependency(self.task, self.prerequisite)
+        add_task_dependency(self.prerequisite, self.third_task)
+
+        with self.assertRaises(ValidationError):
+            add_task_dependency(self.third_task, self.task)
+
+        self.assertEqual(TaskDependency.objects.count(), 2)
