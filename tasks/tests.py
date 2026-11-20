@@ -9,6 +9,7 @@ from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
 from tasks.services import (
     add_task_dependency,
     assign_worker_to_task,
+    delete_task_dependency,
     get_task_display_state,
     remove_worker_from_task,
     set_assignment_completion,
@@ -459,4 +460,22 @@ class TaskTests(TestCase):
         with self.assertRaises(ValidationError):
             add_task_dependency(self.task, another_task)
 
+        self.assertFalse(TaskDependency.objects.exists())
+
+    def test_removing_dependency_recalculates_completion(self):
+        assign_worker_to_task(self.task, self.worker)
+        add_task_dependency(self.task, self.prerequisite)
+        set_assignment_completion(self.worker, self.task, True)
+
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_completed)
+
+        delete_task_dependency(
+            dependent_task=self.task,
+            prerequisite_task=self.prerequisite,
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertTrue(self.task.is_completed)
         self.assertFalse(TaskDependency.objects.exists())
