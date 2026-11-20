@@ -618,3 +618,27 @@ class TaskTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    def test_admin_task_deletion_recalculates_dependent_task(self):
+        self.worker.is_staff = True
+        self.worker.is_superuser = True
+        self.worker.save()
+        self.client.force_login(self.worker)
+
+        assign_worker_to_task(self.task, self.worker)
+        add_task_dependency(self.task, self.prerequisite)
+        set_assignment_completion(self.worker, self.task, True)
+
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_completed)
+
+        response = self.client.post(
+            reverse("admin:tasks_task_delete", args=[self.prerequisite.pk]),
+            {"post": "yes"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Task.objects.filter(pk=self.prerequisite.pk).exists())
+
+        self.task.refresh_from_db()
+        self.assertTrue(self.task.is_completed)
