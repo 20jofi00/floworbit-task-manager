@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -299,3 +300,12 @@ class TaskTests(TestCase):
             get_task_display_state(task=self.task),
             "in_progress",
         )
+
+    def test_outsider_cannot_be_assigned(self):
+        with self.assertRaises(ValidationError):
+            assign_worker_to_task(
+                task=self.task,
+                worker=self.outsider,
+            )
+
+        self.assertFalse(TaskAssignment.objects.filter(task=self.task).exists())
