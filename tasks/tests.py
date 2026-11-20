@@ -232,3 +232,23 @@ class TaskTests(TestCase):
         self.assertEqual(self.task.name, "Updated task")
         self.assertEqual(self.task.description, "Updated description")
         self.assertEqual(self.task.priority, "low")
+
+    def test_task_search_and_priority_filter(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.get(
+            reverse(
+                "tasks:task-list",
+                kwargs={"team_pk": self.team.pk},
+            ),
+            {
+                "name": "task",
+                "priority": "high",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerySetEqual(
+            response.context["task_list"],
+            [self.task],
+        )
