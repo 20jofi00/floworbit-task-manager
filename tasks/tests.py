@@ -159,3 +159,38 @@ class TaskTests(TestCase):
         self.assertEqual(self.task.name, "Main task")
         self.assertFalse(Task.objects.filter(name="Unauthorized task").exists())
         self.assertFalse(TaskAssignment.objects.filter(task=self.task).exists())
+
+    def test_task_create_saves_task(self):
+        self.client.force_login(self.worker)
+
+        response = self.client.post(
+            reverse(
+                "tasks:task-create",
+                kwargs={"project_pk": self.project.pk},
+            ),
+            {
+                "name": "New task",
+                "description": "Task description",
+                "task_type": self.task_type.pk,
+                "deadline": self.today.isoformat(),
+                "priority": "high",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "projects:project-detail",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": self.project.pk,
+                },
+            ),
+        )
+
+        task = Task.objects.get(name="New task")
+
+        self.assertEqual(task.project, self.project)
+        self.assertEqual(task.description, "Task description")
+        self.assertEqual(task.priority, "high")
+        self.assertFalse(task.is_completed)
