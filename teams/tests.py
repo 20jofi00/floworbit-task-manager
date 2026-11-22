@@ -332,3 +332,32 @@ class TeamTests(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("members", form.errors)
         self.assertTrue(self.team.members.filter(pk=self.worker.pk).exists())
+
+    def test_dashboard_uses_fixed_queries(self):
+        Task.objects.create(
+            name="First task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=timezone.localdate(),
+        )
+
+        with self.assertNumQueries(4):
+            get_team_dashboard_stats(self.team)
+
+        project = Project.objects.create(
+            name="Another project",
+            team=self.team,
+        )
+
+        for number in range(5):
+            Task.objects.create(
+                name=f"Extra task {number}",
+                project=project,
+                task_type=self.task_type,
+                deadline=timezone.localdate(),
+            )
+
+        with self.assertNumQueries(4):
+            data = get_team_dashboard_stats(self.team)
+
+        self.assertEqual(data["stats"]["total_tasks"], 6)
