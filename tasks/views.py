@@ -571,3 +571,20 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
         )
         queryset = Task.objects.filter(project=self.project)
         return queryset
+
+    def get_month_date(self) -> date:
+        today = timezone.localdate()
+
+        try:
+            year = int(self.request.GET.get("year", today.year))
+            month = int(self.request.GET.get("month", today.month))
+        except (ValueError, TypeError):
+            raise Http404("Invalid calendar date")
+
+        if not 2000 <= year <= 2100:
+            raise Http404("Year is out of valid range")
+
+        if not 1 <= month <= 12:
+            raise Http404("Unknown month")
+
+        return date(year, month, 1)
