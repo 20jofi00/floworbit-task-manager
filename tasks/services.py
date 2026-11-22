@@ -32,17 +32,13 @@ def remove_worker_from_task(task: Task, worker: Worker) -> None:
 
 
 def calculate_task_completion(task: Task) -> bool:
-    if TaskAssignment.objects.filter(task_id=task.id).exists():
-        tasks_dependency = TaskDependency.objects.filter(dependent_task_id=task.id)
-        for task_dependency in tasks_dependency:
-            if not task_dependency.prerequisite_task.is_completed:
-                return False
-        tasks_assignment = TaskAssignment.objects.filter(task_id=task.id)
-        for task_assignment in tasks_assignment:
-            if not task_assignment.is_completed:
-                return False
-        return True
-    return False
+    assignments = TaskAssignment.objects.filter(task_id=task.pk)
+    if not assignments.exists() or assignments.filter(is_completed=False).exists():
+        return False
+    return not TaskDependency.objects.filter(
+        dependent_task_id=task.pk,
+        prerequisite_task__is_completed=False,
+    ).exists()
 
 
 def refresh_task_completion(task: Task) -> bool:
@@ -50,7 +46,7 @@ def refresh_task_completion(task: Task) -> bool:
     task_completion = calculate_task_completion(task=task)
     if task.is_completed != task_completion:
         task.is_completed = task_completion
-        task.save()
+        task.save(update_fields=["is_completed"])
         return True
     return False
 
