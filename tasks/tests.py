@@ -1,5 +1,7 @@
 from datetime import date
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -7,7 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from projects.models import Project
-from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
+from tasks.models import Task, TaskAssignment, TaskDependency, TaskType, Tag
 from tasks.services import (
     add_task_dependency,
     assign_worker_to_task,
@@ -712,3 +714,58 @@ class TaskTests(TestCase):
 
         self.third_task.refresh_from_db()
         self.assertTrue(self.third_task.is_completed)
+
+    def test_task_pages_do_not_query_each_task(self):
+        self.client.force_login(self.worker)
+
+        tag = Tag.objects.create(name="backend")
+        self.task.tags.add(tag)
+        assign_worker_to_task(self.task, self.worker)
+        add_task_dependency(self.task, self.prerequisite)
+
+        urls = [
+            reverse(
+                "tasks:task-list",
+                kwargs={"team_pk": self.team.pk},
+            ),
+            reverse(
+                "tasks:project-task-board",
+                kwargs={"project_pk": self.project.pk},
+            ),
+            reverse(
+                "tasks:project-task-calendar",
+                kwargs={"project_pk": self.project.pk},
+            ),
+        ]
+
+        query_counts = []
+
+        for url in urls:
+            with CaptureQueriesContext(connection) as queries:
+                response = self.client.get(url)
+
+            self.assertEqual(response.status_code, 200)
+            query_counts.append(len(queries))
+
+        for number in range(6):
+            task = Task.objects.create(
+                name=f"Extra task {number}",
+                project=self.project,
+                task_type=self.task_type,
+                deadline=self.today,
+            )
+            task.tags.add(tag)
+            assign_worker_to_task(task, self.worker)
+            add_task_dependency(task, self.prerequisite)
+
+        for url, query_count in zip(urls, query_counts):
+            with self.subTest(url=url):
+                with CaptureQueriesContext(connection) as queries:
+                    response = self.client.get(url)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    len(response.context["task_list"]),
+                    9,
+                )
+                self.assertEqual(len(queries), query_count)
