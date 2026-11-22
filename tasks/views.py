@@ -421,12 +421,24 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         self.task_assignments = TaskAssignment.objects.filter(worker=self.request.user)
 
-        self.queryset = Task.objects.filter(
-            id__in=self.task_assignments.values_list(
-                "task",
-                flat=True,
+        self.queryset = (
+            Task.objects.filter(
+                id__in=self.task_assignments.values_list(
+                    "task",
+                    flat=True,
+                )
             )
-        ).order_by("-deadline", "pk")
+            .select_related(
+                "task_type",
+                "project__team",
+            )
+            .prefetch_related(
+                "tags",
+                "task_assignments",
+                "dependency_links__prerequisite_task",
+            )
+            .order_by("-deadline", "pk")
+        )
 
         self.search_form = TeamTaskForm(self.request.GET, user=self.request.user)
         if self.search_form.is_valid():
