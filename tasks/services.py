@@ -3,7 +3,6 @@ from django.db import transaction
 
 from accounts.models import Worker
 from projects.models import Project
-from projects.service import require_project_access
 from tasks.models import Task, TaskAssignment, TaskDependency
 
 
@@ -34,9 +33,7 @@ def remove_worker_from_task(task: Task, worker: Worker) -> None:
 
 def calculate_task_completion(task: Task) -> bool:
     if TaskAssignment.objects.filter(task_id=task.id).exists():
-        tasks_dependency = TaskDependency.objects.filter(
-            dependent_task_id=task.id
-        )
+        tasks_dependency = TaskDependency.objects.filter(dependent_task_id=task.id)
         for task_dependency in tasks_dependency:
             if not task_dependency.prerequisite_task.is_completed:
                 return False
@@ -64,11 +61,9 @@ def propagate_task_completion(task: Task) -> None:
         if not tasks_list:
             break
         if refresh_task_completion(task=tasks_list[0]):
-            for task_id_for_check in (
-                TaskDependency.objects.filter(
-                    prerequisite_task=tasks_list[0].id
-                ).values_list("dependent_task", flat=True)
-            ):
+            for task_id_for_check in TaskDependency.objects.filter(
+                prerequisite_task=tasks_list[0].id
+            ).values_list("dependent_task", flat=True):
                 tasks_list.append(Task.objects.get(pk=task_id_for_check))
         del tasks_list[0]
 
@@ -76,8 +71,8 @@ def propagate_task_completion(task: Task) -> None:
 def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) -> None:
     try:
         task_assignment = TaskAssignment.objects.get(
-        task_id=task.id, worker_id=worker.id
-    )
+            task_id=task.id, worker_id=worker.id
+        )
         task_assignment.is_completed = is_completed
         task_assignment.save()
         propagate_task_completion(task=task)
@@ -125,17 +120,8 @@ def task_change_project(task: Task, project: Project) -> None:
     task.save()
 
 
-def require_task_edit_access(worker: Worker, task: Task) -> None:
-    require_project_access(
-        worker=worker,
-        project=task.project,
-    )
-
-
 def get_task_display_state(task: Task) -> str:
-    tasks_dependency = TaskDependency.objects.filter(
-        dependent_task_id=task.id
-    )
+    tasks_dependency = TaskDependency.objects.filter(dependent_task_id=task.id)
     for task_dependency in tasks_dependency:
         if not task_dependency.prerequisite_task.is_completed:
             return "blocked"
