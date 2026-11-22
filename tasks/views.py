@@ -509,41 +509,27 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
 
     def get_context_data(self, **kwargs):
         context = super(TaskCalendarView, self).get_context_data(**kwargs)
-
         context["project"] = self.project
-
-        today = timezone.localdate()
-
-        try:
-            month = int(self.request.GET.get("month", today.month))
-            if not (month >= 1 and month <= 12):
-                raise Http404("Unknown month")
-            year = int(self.request.GET.get("year", today.year))
-            if not (2000 <= year <= 2100):
-                raise ValueError("Year is out of valid range")
-            context["month_date"] = date(year, month, 1)
-        except (ValueError, TypeError):
-            raise Http404("Invalid data")
-
-        month_tasks = self.object_list.filter(
-            deadline__year=year,
-            deadline__month=month,
-        )
+        context["month_date"] = self.month_date
 
         day_tasks = {}
 
-        for task in month_tasks:
+        for task in self.object_list:
             task.state = get_task_display_state(task=task)
             day_tasks.setdefault(task.deadline.day, []).append(task)
+
         cal = calendar.Calendar(firstweekday=0)
         context["calendar_weeks"] = []
 
         for week in cal.monthdatescalendar(
-            context["month_date"].year, context["month_date"].month
+            self.month_date.year,
+            self.month_date.month,
         ):
             week_days = []
+
             for day_date in week:
-                is_current_month = day_date.month == context["month_date"].month
+                is_current_month = day_date.month == self.month_date.month
+
                 week_days.append(
                     {
                         "date": day_date,
@@ -553,13 +539,15 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
                         ),
                     }
                 )
+
             context["calendar_weeks"].append(week_days)
 
-        prev_month = (context["month_date"] - timedelta(days=1)).replace(day=1)
+        prev_month = (self.month_date - timedelta(days=1)).replace(day=1)
 
-        next_month = (context["month_date"] + timedelta(days=32)).replace(day=1)
         context["prev_month"] = prev_month if prev_month.year >= 2000 else None
-        context["next_month"] = next_month if next_month.year <= 2100 else None
+        context["next_month"] = (
+            self.next_month_date if self.next_month_date.year <= 2100 else None
+        )
 
         return context
 
