@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
+from tasks.dependencies import get_affected_task_order
 from accounts.models import Worker
 from tasks.models import Task, TaskAssignment, TaskDependency
 
@@ -54,17 +55,13 @@ def refresh_task_completion(task: Task) -> bool:
     return False
 
 
+@transaction.atomic
 def propagate_task_completion(task: Task) -> None:
-    tasks_list = [task]
-    while True:
-        if not tasks_list:
-            break
-        if refresh_task_completion(task=tasks_list[0]):
-            for task_id_for_check in TaskDependency.objects.filter(
-                prerequisite_task=tasks_list[0].id
-            ).values_list("dependent_task", flat=True):
-                tasks_list.append(Task.objects.get(pk=task_id_for_check))
-        del tasks_list[0]
+    order = get_affected_task_order(task)
+    tasks = Task.objects.in_bulk(order)
+
+    for task_id in order:
+        refresh_task_completion(task=tasks[task_id])
 
 
 def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) -> None:
