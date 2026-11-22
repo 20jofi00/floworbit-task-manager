@@ -77,12 +77,17 @@ def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) ->
 
 
 @transaction.atomic
-def add_task_dependency(dependent_task: Task, prerequisite_task: Task) -> None:
-    task_dependency = TaskDependency(
+def add_task_dependency(
+    dependent_task: Task,
+    prerequisite_task: Task,
+) -> None:
+    dependency = TaskDependency(
         dependent_task=dependent_task,
         prerequisite_task=prerequisite_task,
     )
-    task_dependency.save()
+    dependency.full_clean()
+    dependency.save()
+
     propagate_task_completion(task=dependent_task)
 
 
