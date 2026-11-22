@@ -484,7 +484,18 @@ class TaskBoardView(LoginRequiredMixin, generic.ListView):
             pk=self.kwargs.get("project_pk"),
             team__members=self.request.user.id,
         )
-        queryset = Task.objects.filter(project=self.project)
+        queryset = (
+            Task.objects.filter(project=self.project)
+            .select_related(
+                "task_type",
+                "project__team",
+            )
+            .prefetch_related(
+                "tags",
+                "task_assignments",
+                "dependency_links__prerequisite_task",
+            )
+        )
         return queryset
 
 
