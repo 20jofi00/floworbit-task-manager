@@ -137,9 +137,5 @@ class TaskDependency(models.Model):
         ):
             raise ValidationError("This dependency would create a cycle.")
 
-    def save(self, **kwargs):
-        self.full_clean()
-        return super().save(**kwargs)
-
     def __str__(self):
         return f"{self.dependent_task} depends on {self.prerequisite_task}"
