@@ -10,6 +10,7 @@ from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
 from teams.forms import TeamAdminForm
 from teams.models import Team
 from teams.service import get_team_dashboard_stats
+from teams.views import TeamWorkloadView
 
 
 class TeamTests(TestCase):
@@ -361,3 +362,23 @@ class TeamTests(TestCase):
             data = get_team_dashboard_stats(self.team)
 
         self.assertEqual(data["stats"]["total_tasks"], 6)
+
+    def test_workload_uses_one_member_query(self):
+        view = TeamWorkloadView()
+        view.object = self.team
+
+        with self.assertNumQueries(1):
+            context = view.get_context_data()
+            list(context["members"])
+
+        for number in range(5):
+            worker = get_user_model().objects.create_user(
+                username=f"extra_worker_{number}",
+            )
+            self.team.members.add(worker)
+
+        with self.assertNumQueries(1):
+            context = view.get_context_data()
+            members = list(context["members"])
+
+        self.assertEqual(len(members), 7)
