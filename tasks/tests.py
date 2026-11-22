@@ -15,6 +15,7 @@ from tasks.services import (
     assign_worker_to_task,
     delete_task_dependency,
     get_task_display_state,
+    propagate_task_completion,
     remove_worker_from_task,
     set_assignment_completion,
 )
@@ -823,3 +824,36 @@ class TaskTests(TestCase):
         ]:
             task.refresh_from_db()
             self.assertFalse(task.is_completed)
+
+    def test_propagation_rejects_stored_dependency_cycle(self):
+        Task.objects.filter(pk=self.task.pk).update(
+            is_completed=True,
+        )
+
+        TaskDependency.objects.bulk_create(
+            [
+                TaskDependency(
+                    dependent_task=self.task,
+                    prerequisite_task=self.prerequisite,
+                ),
+                TaskDependency(
+                    dependent_task=self.prerequisite,
+                    prerequisite_task=self.third_task,
+                ),
+                TaskDependency(
+                    dependent_task=self.third_task,
+                    prerequisite_task=self.task,
+                ),
+            ]
+        )
+
+        with self.assertRaises(ValidationError):
+            propagate_task_completion(self.task)
+
+        self.task.refresh_from_db()
+        self.prerequisite.refresh_from_db()
+        self.third_task.refresh_from_db()
+
+        self.assertTrue(self.task.is_completed)
+        self.assertFalse(self.prerequisite.is_completed)
+        self.assertFalse(self.third_task.is_completed)
