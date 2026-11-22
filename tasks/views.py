@@ -565,12 +565,27 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         self.project = get_object_or_404(
-            Project,
-            pk=self.kwargs.get("project_pk"),
+            Project.objects.select_related("team"),
+            pk=self.kwargs["project_pk"],
             team__members=self.request.user.id,
         )
-        queryset = Task.objects.filter(project=self.project)
-        return queryset
+
+        self.month_date = self.get_month_date()
+        self.next_month_date = (self.month_date + timedelta(days=32)).replace(day=1)
+
+        return (
+            Task.objects.filter(
+                project=self.project,
+                deadline__gte=self.month_date,
+                deadline__lt=self.next_month_date,
+            )
+            .select_related("project__team")
+            .prefetch_related(
+                "task_assignments",
+                "dependency_links__prerequisite_task",
+            )
+            .order_by("deadline", "pk")
+        )
 
     def get_month_date(self) -> date:
         today = timezone.localdate()
