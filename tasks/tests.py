@@ -769,3 +769,57 @@ class TaskTests(TestCase):
                     9,
                 )
                 self.assertEqual(len(queries), query_count)
+
+    def test_completion_handles_converging_dependency_paths(self):
+        last_task = Task.objects.create(
+            name="Last task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=self.today,
+        )
+
+        for task in [
+            self.prerequisite,
+            self.task,
+            self.third_task,
+            last_task,
+        ]:
+            assign_worker_to_task(task, self.worker)
+
+        add_task_dependency(last_task, self.prerequisite)
+        add_task_dependency(self.task, self.prerequisite)
+        add_task_dependency(self.third_task, self.task)
+        add_task_dependency(last_task, self.third_task)
+
+        for task in [self.task, self.third_task, last_task]:
+            set_assignment_completion(self.worker, task, True)
+
+        set_assignment_completion(
+            self.worker,
+            self.prerequisite,
+            True,
+        )
+
+        for task in [
+            self.prerequisite,
+            self.task,
+            self.third_task,
+            last_task,
+        ]:
+            task.refresh_from_db()
+            self.assertTrue(task.is_completed)
+
+        set_assignment_completion(
+            self.worker,
+            self.prerequisite,
+            False,
+        )
+
+        for task in [
+            self.prerequisite,
+            self.task,
+            self.third_task,
+            last_task,
+        ]:
+            task.refresh_from_db()
+            self.assertFalse(task.is_completed)
