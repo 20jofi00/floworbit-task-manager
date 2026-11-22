@@ -102,12 +102,12 @@ def delete_task_dependency(dependent_task: Task, prerequisite_task: Task) -> Non
 
 
 def get_task_display_state(task: Task) -> str:
-    tasks_dependency = TaskDependency.objects.filter(dependent_task_id=task.id)
-    for task_dependency in tasks_dependency:
+    dependencies = task.dependency_links.all()
+    for task_dependency in dependencies:
         if not task_dependency.prerequisite_task.is_completed:
             return "blocked"
     if task.is_completed:
         return "completed"
-    if TaskAssignment.objects.filter(task_id=task.id).exists():
+    if task.task_assignments.exists():
         return "in_progress"
     return "unassigned"
