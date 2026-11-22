@@ -471,7 +471,7 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
                 raise Http404("Unknown month")
             year = int(self.request.GET.get("year", today.year))
             if not (2000 <= year <= 2100):
-                raise ValueError("Год вне допустимого диапазона")
+                raise ValueError("Year is out of valid range")
             context["month_date"] = date(year, month, 1)
         except (ValueError, TypeError):
             raise Http404("Invalid data")
