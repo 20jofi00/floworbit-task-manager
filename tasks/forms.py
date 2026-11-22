@@ -163,9 +163,13 @@ class TaskAddDependencyForm(forms.Form):
             raise TypeError("You need to add task")
         self.task = kwargs.pop("task")
         super().__init__(*args, **kwargs)
-        self.fields["prerequisite_task"].queryset = Task.objects.filter(
-            project=self.project,
-        ).exclude(pk=self.task.id)
+        self.fields["prerequisite_task"].queryset = (
+            Task.objects.filter(
+                project=self.project,
+            )
+            .exclude(pk=self.task.id)
+            .select_related("task_type", "project")
+        )
 
     prerequisite_task = forms.ModelChoiceField(
         queryset=None,
