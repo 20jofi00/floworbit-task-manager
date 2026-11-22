@@ -1,7 +1,7 @@
 from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Q
 
-from tasks.models import TaskAssignment
 from teams.forms import TeamSearchForm
 from teams.models import Team
 from teams.service import get_team_dashboard_stats
@@ -58,23 +58,32 @@ class TeamWorkloadView(LoginRequiredMixin, generic.DetailView):
     template_name = "teams/team_workload.html"
 
     def get_context_data(self, **kwargs):
-        context = super(TeamWorkloadView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context["team"] = self.object
-        members = []
-        for member in self.object.members.all():
-            members_tasks = TaskAssignment.objects.filter(
-                task__project__team=self.object,
-                worker=member,
-            )
-            member.incomplete_assignments = members_tasks.filter(
-                is_completed=False
-            ).count()
-            member.completed_assignments = members_tasks.filter(
-                is_completed=True
-            ).count()
-            members.append(member)
 
-        context["members"] = members
+        context["members"] = (
+            self.object.members.select_related("position")
+            .annotate(
+                incomplete_assignments=Count(
+                    "task_assignments",
+                    filter=Q(
+                        task_assignments__task__project__team=self.object,
+                        task_assignments__is_completed=False,
+                    ),
+                    distinct=True,
+                ),
+                completed_assignments=Count(
+                    "task_assignments",
+                    filter=Q(
+                        task_assignments__task__project__team=self.object,
+                        task_assignments__is_completed=True,
+                    ),
+                    distinct=True,
+                ),
+            )
+            .order_by("pk")
+        )
+
         return context
 
     def get_queryset(self):
