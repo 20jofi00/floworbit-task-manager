@@ -1,11 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 
 from projects.forms import ProjectAdminForm
 from projects.models import Project
-from projects.service import move_project_to_team
 from tasks.models import Task, TaskType
 from teams.models import Team
 
@@ -292,33 +290,21 @@ class ProjectTests(TestCase):
             0,
         )
 
-    def test_empty_project_can_be_moved(self):
-        move_project_to_team(
-            team=self.other_team,
-            project=self.project,
+    def test_admin_form_allows_moving_empty_project(self):
+        form = ProjectAdminForm(
+            data={
+                "name": self.project.name,
+                "description": self.project.description,
+                "team": self.other_team.pk,
+            },
+            instance=self.project,
         )
 
-        self.project.refresh_from_db()
-
-        self.assertEqual(self.project.team, self.other_team)
-
-    def test_project_with_tasks_cannot_be_moved(self):
-        Task.objects.create(
-            name="Existing task",
-            task_type=self.task_type,
-            project=self.project,
-            deadline="2026-11-18",
-        )
-
-        with self.assertRaises(ValidationError):
-            move_project_to_team(
-                team=self.other_team,
-                project=self.project,
-            )
+        self.assertTrue(form.is_valid())
+        form.save()
 
         self.project.refresh_from_db()
-
-        self.assertEqual(self.project.team, self.team)
+        self.assertEqual(self.project.team_id, self.other_team.pk)
 
     def test_admin_form_rejects_moving_project_with_tasks(self):
         Task.objects.create(
