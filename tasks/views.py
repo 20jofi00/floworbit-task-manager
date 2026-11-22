@@ -130,12 +130,16 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
             dependent_task=self.object
         ).values_list("prerequisite_task", flat=True)
 
-        context["prerequisite_tasks"] = Task.objects.filter(id__in=prerequisite_ids)
+        context["prerequisite_tasks"] = Task.objects.filter(
+            id__in=prerequisite_ids
+        ).select_related("project__team")
 
         context["task"] = self.object
 
         self.object.state = get_task_display_state(task=self.object)
-        context["assignments"] = TaskAssignment.objects.filter(task=self.object)
+        context["assignments"] = TaskAssignment.objects.filter(
+            task=self.object
+        ).select_related("worker__position")
 
         context["form"] = AssignWorkerForm(team=self.object.project.team)
 
