@@ -85,10 +85,6 @@ class TaskAssignment(models.Model):
                     {"worker": "This worker is not a member of the project's team"}
                 )
 
-    def save(self, **kwargs):
-        self.full_clean()
-        return super().save(**kwargs)
-
     def __str__(self):
         return f"{self.worker}'s task: {self.task}"
 
