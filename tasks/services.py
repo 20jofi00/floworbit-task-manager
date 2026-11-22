@@ -6,18 +6,18 @@ from accounts.models import Worker
 from tasks.models import Task, TaskAssignment, TaskDependency
 
 
+@transaction.atomic
 def assign_worker_to_task(task: Task, worker: Worker) -> TaskAssignment:
-    team = task.project.team
-    if team.members.filter(pk=worker.id).exists():
-        task_assignment = TaskAssignment(
-            task=task,
-            worker=worker,
-        )
-        task_assignment.save()
-        propagate_task_completion(task=task)
-        return task_assignment
-    else:
-        raise ValidationError("Worker is in another team")
+    assignment = TaskAssignment(
+        task=task,
+        worker=worker,
+    )
+    assignment.full_clean()
+    assignment.save()
+
+    propagate_task_completion(task=task)
+
+    return assignment
 
 
 def remove_worker_from_task(task: Task, worker: Worker) -> None:
