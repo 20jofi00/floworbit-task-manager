@@ -156,7 +156,19 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
             pk=self.kwargs.get("team_pk"),
             members=self.request.user.id,
         )
-        return Task.objects.filter(project__team=self.team).order_by("-deadline", "pk")
+        return (
+            Task.objects.filter(project__team=self.team)
+            .select_related(
+                "task_type",
+                "project__team",
+            )
+            .prefetch_related(
+                "tags",
+                "task_assignments",
+                "dependency_links__prerequisite_task",
+            )
+            .order_by("-deadline", "pk")
+        )
 
 
 class TaskCreateView(LoginRequiredMixin, generic.CreateView):
