@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from accounts.models import Worker
-from projects.models import Project
 from tasks.models import Task, TaskAssignment, TaskDependency
 
 
@@ -100,24 +99,6 @@ def delete_task_dependency(dependent_task: Task, prerequisite_task: Task) -> Non
         propagate_task_completion(task=dependent_task)
     else:
         raise ValidationError("This task dependency does not exist")
-
-
-def task_change_project(task: Task, project: Project) -> None:
-    task.refresh_from_db()
-    if project.id == task.project.id:
-        raise ValidationError("Task already in this project")
-    if not project.team.id == task.project.team.id:
-        raise ValidationError("Project must change in one team")
-    if TaskDependency.objects.filter(dependent_task_id=task.id).exists():
-        raise ValidationError(
-            "This task depends on another task. Remove the dependency before moving it"
-        )
-    if TaskDependency.objects.filter(prerequisite_task_id=task.id).exists():
-        raise ValidationError(
-            "Other tasks depend on this task. Remove those dependencies before moving it"
-        )
-    task.project = project
-    task.save()
 
 
 def get_task_display_state(task: Task) -> str:

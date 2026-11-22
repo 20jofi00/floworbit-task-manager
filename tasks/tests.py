@@ -15,7 +15,6 @@ from tasks.services import (
     get_task_display_state,
     remove_worker_from_task,
     set_assignment_completion,
-    task_change_project,
 )
 from teams.models import Team
 
@@ -488,22 +487,64 @@ class TaskTests(TestCase):
             name="Another project",
             team=self.team,
         )
+        self.client.force_login(self.worker)
 
-        task_change_project(
-            task=self.task,
-            project=another_project,
+        response = self.client.post(
+            reverse(
+                "tasks:task-update",
+                kwargs={
+                    "project_pk": self.project.pk,
+                    "pk": self.task.pk,
+                },
+            ),
+            {
+                "name": self.task.name,
+                "task_type": self.task_type.pk,
+                "project": another_project.pk,
+                "deadline": self.today.isoformat(),
+                "priority": self.task.priority,
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse(
+                "projects:project-detail",
+                kwargs={
+                    "team_pk": self.team.pk,
+                    "pk": another_project.pk,
+                },
+            ),
         )
 
         self.task.refresh_from_db()
-
-        self.assertEqual(self.task.project, another_project)
+        self.assertEqual(self.task.project_id, another_project.pk)
 
     def test_invalid_task_transfers_are_rejected(self):
-        with self.assertRaises(ValidationError):
-            task_change_project(
-                task=self.task,
-                project=self.other_project,
-            )
+        self.client.force_login(self.worker)
+
+        url = reverse(
+            "tasks:task-update",
+            kwargs={
+                "project_pk": self.project.pk,
+                "pk": self.task.pk,
+            },
+        )
+        data = {
+            "name": self.task.name,
+            "task_type": self.task_type.pk,
+            "project": self.other_project.pk,
+            "deadline": self.today.isoformat(),
+            "priority": "high",
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("project", response.context["form"].errors)
+
+        self.task.refresh_from_db()
+        self.assertEqual(self.task.project_id, self.project.pk)
 
         another_project = Project.objects.create(
             name="Another project",
@@ -511,15 +552,14 @@ class TaskTests(TestCase):
         )
         add_task_dependency(self.task, self.prerequisite)
 
-        with self.assertRaises(ValidationError):
-            task_change_project(
-                task=self.task,
-                project=another_project,
-            )
+        data["project"] = another_project.pk
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("project", response.context["form"].errors)
 
         self.task.refresh_from_db()
-
-        self.assertEqual(self.task.project, self.project)
+        self.assertEqual(self.task.project_id, self.project.pk)
 
     def test_board_groups_tasks_by_state(self):
         assign_worker_to_task(self.task, self.worker)
