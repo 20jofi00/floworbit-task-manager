@@ -2,6 +2,7 @@ import calendar
 from datetime import date, timedelta
 
 from django.http import Http404
+from django.db.models import F
 from django.urls import reverse
 from django.shortcuts import render
 from django.utils import timezone
@@ -402,40 +403,27 @@ class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
 class MyTaskListView(LoginRequiredMixin, generic.ListView):
     model = Task
     template_name = "tasks/my_task_list.html"
+    paginate_by = 20
 
     def get_context_data(self, **kwargs):
-        context = super(MyTaskListView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context["search_form"] = self.search_form
         context["completed_tasks"] = []
         context["incomplete_tasks"] = []
 
-        task_assignments = {}
-
-        for task_assignment in self.task_assignments:
-            task_assignments[task_assignment.task_id] = task_assignment
-
-        for task in self.object_list:
+        for task in context["task_list"]:
             task.state = get_task_display_state(task=task)
-            if task_assignments[task.id].is_completed:
+            if task.my_assignment_completed:
                 context["completed_tasks"].append(task)
             else:
                 context["incomplete_tasks"].append(task)
         return context
 
     def get_queryset(self):
-        self.task_assignments = TaskAssignment.objects.filter(worker=self.request.user)
-
-        self.queryset = (
-            Task.objects.filter(
-                id__in=self.task_assignments.values_list(
-                    "task",
-                    flat=True,
-                )
-            )
-            .select_related(
-                "task_type",
-                "project__team",
-            )
+        queryset = (
+            Task.objects.filter(task_assignments__worker=self.request.user)
+            .annotate(my_assignment_completed=F("task_assignments__is_completed"))
+            .select_related("task_type", "project__team")
             .prefetch_related(
                 "tags",
                 "task_assignments",
@@ -443,18 +431,13 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
             )
             .order_by("-deadline", "pk")
         )
-
         self.search_form = TeamTaskForm(self.request.GET, user=self.request.user)
         if self.search_form.is_valid():
             if self.search_form.cleaned_data["teams"]:
-                self.queryset = self.queryset.filter(
-                    project__team__in=self.search_form.cleaned_data["teams"]
-                )
+                queryset = queryset.filter(project__team__in=self.search_form.cleaned_data["teams"])
             if self.search_form.cleaned_data["name"]:
-                self.queryset = self.queryset.filter(
-                    name__icontains=self.search_form.cleaned_data["name"]
-                )
-        return self.queryset
+                queryset = queryset.filter(name__icontains=self.search_form.cleaned_data["name"])
+        return queryset
 
 
 class TaskBoardView(LoginRequiredMixin, generic.ListView):
