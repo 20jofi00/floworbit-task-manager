@@ -39,7 +39,7 @@ def get_accessible_task(project_pk: int, task_pk: int, user_id: int) -> Task:
         team__members=user_id,
     )
     return get_object_or_404(
-        Task,
+        Task.objects.select_related("task_type", "project__team"),
         pk=task_pk,
         project=project,
     )
@@ -257,7 +257,7 @@ class AssignWorkerView(LoginRequiredMixin, generic.FormView):
         context = {
             "task": task,
             "form": form,
-            "assignments": TaskAssignment.objects.filter(task=task),
+            "assignments": TaskAssignment.objects.filter(task=task).select_related("worker__position"),
             "my_assignment": TaskAssignment.objects.filter(
                 task=task,
                 worker=self.request.user,
@@ -353,7 +353,7 @@ class TaskAddDependencyView(LoginRequiredMixin, generic.FormView):
         tasks_dependency_ids = TaskDependency.objects.filter(
             dependent_task=task
         ).values_list("prerequisite_task", flat=True)
-        tasks_dependency = Task.objects.filter(id__in=tasks_dependency_ids)
+        tasks_dependency = Task.objects.filter(id__in=tasks_dependency_ids).select_related("project__team")
         task.state = get_task_display_state(task=task)
         context = {
             "task": task,
