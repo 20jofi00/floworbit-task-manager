@@ -443,6 +443,7 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
 class TaskBoardView(LoginRequiredMixin, generic.ListView):
     model = Task
     template_name = "tasks/project_task_board.html"
+    paginate_by = 40
 
     def get_context_data(self, **kwargs):
         context = super(TaskBoardView, self).get_context_data(**kwargs)
@@ -453,7 +454,7 @@ class TaskBoardView(LoginRequiredMixin, generic.ListView):
         context["blocked_tasks"] = []
         context["completed_tasks"] = []
 
-        for task in self.object_list:
+        for task in context["task_list"]:
             task.state = get_task_display_state(task=task)
             if task.state == "unassigned":
                 context["unassigned_tasks"].append(task)
@@ -482,6 +483,7 @@ class TaskBoardView(LoginRequiredMixin, generic.ListView):
                 "task_assignments",
                 "dependency_links__prerequisite_task",
             )
+            .order_by("deadline", "pk")
         )
         return queryset
 
