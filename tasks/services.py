@@ -20,11 +20,12 @@ def assign_worker_to_task(task: Task, worker: Worker) -> TaskAssignment:
     return assignment
 
 
+@transaction.atomic
 def remove_worker_from_task(task: Task, worker: Worker) -> None:
     task_assignment = TaskAssignment.objects.filter(
         task_id=task.id, worker_id=worker.id
     )
-    if task_assignment:
+    if task_assignment.exists():
         task_assignment.delete()
         propagate_task_completion(task=task)
     else:
@@ -60,13 +61,15 @@ def propagate_task_completion(task: Task) -> None:
         refresh_task_completion(task=tasks[task_id])
 
 
+@transaction.atomic
 def set_assignment_completion(worker: Worker, task: Task, is_completed: bool) -> None:
     try:
         task_assignment = TaskAssignment.objects.get(
             task_id=task.id, worker_id=worker.id
         )
         task_assignment.is_completed = is_completed
-        task_assignment.save()
+        task_assignment.full_clean()
+        task_assignment.save(update_fields=["is_completed"])
         propagate_task_completion(task=task)
     except TaskAssignment.DoesNotExist:
         raise ValidationError("This worker is not assigned to this task")
@@ -92,7 +95,7 @@ def delete_task_dependency(dependent_task: Task, prerequisite_task: Task) -> Non
     task_dependency = TaskDependency.objects.filter(
         dependent_task=dependent_task, prerequisite_task=prerequisite_task
     )
-    if task_dependency:
+    if task_dependency.exists():
         task_dependency.delete()
         propagate_task_completion(task=dependent_task)
     else:
