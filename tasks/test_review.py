@@ -6,7 +6,7 @@ from django.utils import timezone
 from projects.models import Project
 from tasks.dependencies import has_dependency_path
 from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
-from tasks.services import assign_worker_to_task, set_assignment_completion
+from tasks.services import add_task_dependency, assign_worker_to_task, set_assignment_completion
 from teams.models import Team
 
 
@@ -76,4 +76,24 @@ class TaskReviewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("worker", response.context["adminform"].form.errors)
         self.assertFalse(TaskAssignment.objects.exists())
+
+
+    def test_admin_dependency_form_rejects_a_cycle(self):
+        first = self.make_task("First")
+        second = self.make_task("Second")
+        add_task_dependency(first, second)
+        self.worker.is_staff = True
+        self.worker.is_superuser = True
+        self.worker.save(update_fields=["is_staff", "is_superuser"])
+        self.client.force_login(self.worker)
+
+        response = self.client.post(reverse("admin:tasks_taskdependency_add"), {
+            "dependent_task": second.pk,
+            "prerequisite_task": first.pk,
+            "_save": "Save",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("__all__", response.context["adminform"].form.errors)
+        self.assertEqual(TaskDependency.objects.count(), 1)
 
