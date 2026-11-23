@@ -1,10 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 from projects.models import Project
 from tasks.dependencies import has_dependency_path
-from tasks.models import Task, TaskDependency, TaskType
+from tasks.models import Task, TaskAssignment, TaskDependency, TaskType
 from tasks.services import assign_worker_to_task, set_assignment_completion
 from teams.models import Team
 
@@ -57,4 +58,22 @@ class TaskReviewTests(TestCase):
         first.refresh_from_db()
         self.assertFalse(assignment.is_completed)
         self.assertFalse(first.is_completed)
+
+
+    def test_admin_assignment_form_rejects_a_worker_outside_the_team(self):
+        task = self.make_task("Task")
+        self.worker.is_staff = True
+        self.worker.is_superuser = True
+        self.worker.save(update_fields=["is_staff", "is_superuser"])
+        self.client.force_login(self.worker)
+
+        response = self.client.post(reverse("admin:tasks_taskassignment_add"), {
+            "task": task.pk,
+            "worker": self.outsider.pk,
+            "_save": "Save",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("worker", response.context["adminform"].form.errors)
+        self.assertFalse(TaskAssignment.objects.exists())
 
