@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -162,4 +163,47 @@ class TaskReviewTests(TestCase):
         first_ids = {task.pk for task in first.context["unassigned_tasks"]}
         second_ids = {task.pk for task in second.context["unassigned_tasks"]}
         self.assertFalse(first_ids & second_ids)
+
+
+    def test_calendar_pagination_keeps_month_parameters_and_all_tasks(self):
+        Task.objects.bulk_create([
+            Task(
+                name=f"Calendar task {number:03}",
+                project=self.project,
+                task_type=self.task_type,
+                deadline=self.today,
+            )
+            for number in range(103)
+        ])
+        next_month = (self.today.replace(day=1) + timedelta(days=32)).replace(day=1)
+        Task.objects.create(
+            name="Next month task",
+            project=self.project,
+            task_type=self.task_type,
+            deadline=next_month,
+        )
+        self.client.force_login(self.worker)
+        url = reverse("tasks:project-task-calendar", kwargs={"project_pk": self.project.pk})
+        filters = {"year": self.today.year, "month": self.today.month}
+
+        first = self.client.get(url, filters)
+        second = self.client.get(url, {**filters, "page": 2})
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.context["paginator"].count, 103)
+        self.assertContains(first, f'year={self.today.year}&amp;month={self.today.month}&amp;page=2')
+        pages = []
+        for response in [first, second]:
+            ids = {
+                task.pk
+                for week in response.context["calendar_weeks"]
+                for day in week
+                for task in day["tasks"]
+            }
+            self.assertEqual(ids, {task.pk for task in response.context["task_list"]})
+            pages.append(ids)
+        self.assertEqual(len(pages[0]), 100)
+        self.assertEqual(len(pages[1]), 3)
+        self.assertFalse(pages[0] & pages[1])
 
