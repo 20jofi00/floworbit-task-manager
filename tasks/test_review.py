@@ -97,3 +97,42 @@ class TaskReviewTests(TestCase):
         self.assertIn("__all__", response.context["adminform"].form.errors)
         self.assertEqual(TaskDependency.objects.count(), 1)
 
+
+    def test_personal_pagination_preserves_filters_and_completion_groups(self):
+        tasks = Task.objects.bulk_create([
+            Task(
+                name=f"Review task {number:02}",
+                project=self.project,
+                task_type=self.task_type,
+                deadline=self.today,
+            )
+            for number in range(23)
+        ])
+        TaskAssignment.objects.bulk_create([
+            TaskAssignment(task=task, worker=self.worker, is_completed=number % 2 == 0)
+            for number, task in enumerate(tasks)
+        ])
+        self.make_task("Unassigned task")
+        self.client.force_login(self.worker)
+        url = reverse("tasks:my-task-list")
+        filters = {"name": "Review", "teams": self.team.pk}
+
+        first = self.client.get(url, filters)
+        second = self.client.get(url, {**filters, "page": 2})
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.context["paginator"].count, 23)
+        self.assertEqual(len(first.context["task_list"]), 20)
+        self.assertEqual(len(second.context["task_list"]), 3)
+        self.assertContains(first, f'name=Review&amp;teams={self.team.pk}&amp;page=2')
+        first_ids = {task.pk for task in first.context["task_list"]}
+        second_ids = {task.pk for task in second.context["task_list"]}
+        self.assertFalse(first_ids & second_ids)
+        self.assertEqual(len(first_ids | second_ids), 23)
+        for response in [first, second]:
+            for task in response.context["completed_tasks"]:
+                self.assertTrue(task.my_assignment_completed)
+            for task in response.context["incomplete_tasks"]:
+                self.assertFalse(task.my_assignment_completed)
+
