@@ -23,6 +23,8 @@
     </a>
   </form>
 
+  {% include "includes/task_page_summary.html" %}
+
   <h2 class="h4 mb-3">My incomplete assignments</h2>
   {% include "includes/task_table.html" with tasks=incomplete_tasks empty_message="You have no incomplete assignments." %}
 
