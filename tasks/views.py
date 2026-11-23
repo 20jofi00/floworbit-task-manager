@@ -491,6 +491,7 @@ class TaskBoardView(LoginRequiredMixin, generic.ListView):
 class TaskCalendarView(LoginRequiredMixin, generic.ListView):
     model = Task
     template_name = "tasks/task_calendar.html"
+    paginate_by = 100
 
     def get_context_data(self, **kwargs):
         context = super(TaskCalendarView, self).get_context_data(**kwargs)
@@ -499,7 +500,7 @@ class TaskCalendarView(LoginRequiredMixin, generic.ListView):
 
         day_tasks = {}
 
-        for task in self.object_list:
+        for task in context["task_list"]:
             task.state = get_task_display_state(task=task)
             day_tasks.setdefault(task.deadline.day, []).append(task)
 
