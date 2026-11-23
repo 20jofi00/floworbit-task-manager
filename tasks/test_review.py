@@ -136,3 +136,30 @@ class TaskReviewTests(TestCase):
             for task in response.context["incomplete_tasks"]:
                 self.assertFalse(task.my_assignment_completed)
 
+
+    def test_board_pagination_groups_only_current_page_tasks(self):
+        Task.objects.bulk_create([
+            Task(
+                name=f"Board task {number:02}",
+                project=self.project,
+                task_type=self.task_type,
+                deadline=self.today,
+            )
+            for number in range(43)
+        ])
+        self.client.force_login(self.worker)
+        url = reverse("tasks:project-task-board", kwargs={"project_pk": self.project.pk})
+
+        first = self.client.get(url)
+        second = self.client.get(url, {"page": 2})
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.context["paginator"].count, 43)
+        self.assertEqual(len(first.context["unassigned_tasks"]), 40)
+        self.assertEqual(len(second.context["unassigned_tasks"]), 3)
+        self.assertContains(first, "Only tasks on this page appear below")
+        first_ids = {task.pk for task in first.context["unassigned_tasks"]}
+        second_ids = {task.pk for task in second.context["unassigned_tasks"]}
+        self.assertFalse(first_ids & second_ids)
+
