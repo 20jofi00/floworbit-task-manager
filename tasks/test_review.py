@@ -1,9 +1,11 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 from projects.models import Project
 from tasks.dependencies import has_dependency_path
 from tasks.models import Task, TaskDependency, TaskType
+from tasks.services import assign_worker_to_task, set_assignment_completion
 from teams.models import Team
 
 
@@ -37,4 +39,22 @@ class TaskReviewTests(TestCase):
 
         self.assertTrue(has_dependency_path(self.project.pk, first.pk, second.pk))
         self.assertFalse(has_dependency_path(self.project.pk, first.pk, unrelated.pk))
+
+
+    def test_stored_cycle_rejects_completion_and_rolls_back_the_assignment(self):
+        first = self.make_task("First")
+        second = self.make_task("Second")
+        assignment = assign_worker_to_task(first, self.worker)
+        TaskDependency.objects.bulk_create([
+            TaskDependency(dependent_task=first, prerequisite_task=second),
+            TaskDependency(dependent_task=second, prerequisite_task=first),
+        ])
+
+        with self.assertRaisesMessage(ValidationError, "contain a cycle"):
+            set_assignment_completion(self.worker, first, True)
+
+        assignment.refresh_from_db()
+        first.refresh_from_db()
+        self.assertFalse(assignment.is_completed)
+        self.assertFalse(first.is_completed)
 
