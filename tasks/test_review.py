@@ -1,7 +1,9 @@
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from projects.models import Project
@@ -206,4 +208,29 @@ class TaskReviewTests(TestCase):
         self.assertEqual(len(pages[0]), 100)
         self.assertEqual(len(pages[1]), 3)
         self.assertFalse(pages[0] & pages[1])
+
+
+    def test_personal_task_queries_do_not_grow_per_assignment(self):
+        root = self.make_task("Prerequisite")
+        first = self.make_task("First")
+        assign_worker_to_task(first, self.worker)
+        add_task_dependency(first, root)
+        self.client.force_login(self.worker)
+        url = reverse("tasks:my-task-list")
+
+        with CaptureQueriesContext(connection) as small:
+            first_response = self.client.get(url)
+
+        for number in range(6):
+            task = self.make_task(f"Extra task {number}")
+            assign_worker_to_task(task, self.worker)
+            add_task_dependency(task, root)
+
+        with CaptureQueriesContext(connection) as large:
+            second_response = self.client.get(url)
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(second_response.status_code, 200)
+        self.assertEqual(len(second_response.context["task_list"]), 7)
+        self.assertEqual(len(small), len(large))
 
