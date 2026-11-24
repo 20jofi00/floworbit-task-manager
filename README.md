@@ -195,7 +195,11 @@ checks are not silenced.
 Leave `DJANGO_TRUST_PROXY_HEADERS=false` unless your trusted reverse proxy
 removes client-supplied `X-Forwarded-Proto` and sets the correct value itself.
 
-My Tasks shows 20 tasks per page, project boards show 40, and calendars show
-100 tasks from the selected month per page. Completion groups and calendar
-cells contain only the tasks on the current page. Pagination preserves the
-selected search, teams, year, and month.
+My Tasks has separate pagination for incomplete and completed assignments,
+with up to 20 tasks in each section. Each section keeps its own page number,
+and both preserve the selected search and teams.
+
+Project boards show 40 tasks per page. Calendars show up to 100 tasks from
+the selected month per page. Board columns and calendar cells contain only
+the tasks on the current page. Pagination preserves the relevant filters
+and selected calendar month.
