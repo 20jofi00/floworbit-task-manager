@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 import calendar
 from datetime import date, timedelta
 
@@ -403,20 +404,33 @@ class TaskRemoveDependencyView(LoginRequiredMixin, generic.FormView):
 class MyTaskListView(LoginRequiredMixin, generic.ListView):
     model = Task
     template_name = "tasks/my_task_list.html"
-    paginate_by = 20
+    page_size = 20
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["search_form"] = self.search_form
-        context["completed_tasks"] = []
-        context["incomplete_tasks"] = []
 
-        for task in context["task_list"]:
+        incomplete_queryset = self.object_list.filter(my_assignment_completed=False)
+        completed_queryset = self.object_list.filter(my_assignment_completed=True)
+
+        incomplete_page = Paginator(incomplete_queryset, self.page_size).get_page(
+            self.request.GET.get("incomplete_page")
+        )
+        completed_page = Paginator(completed_queryset, self.page_size).get_page(
+            self.request.GET.get("completed_page")
+        )
+
+        context["incomplete_page"] = incomplete_page
+        context["completed_page"] = completed_page
+        context["incomplete_tasks"] = list(incomplete_page)
+        context["completed_tasks"] = list(completed_page)
+
+        visible_tasks = context["incomplete_tasks"] + context["completed_tasks"]
+        for task in visible_tasks:
             task.state = get_task_display_state(task=task)
-            if task.my_assignment_completed:
-                context["completed_tasks"].append(task)
-            else:
-                context["incomplete_tasks"].append(task)
+
+        context["task_list"] = visible_tasks
+        context["object_list"] = visible_tasks
         return context
 
     def get_queryset(self):
@@ -434,9 +448,13 @@ class MyTaskListView(LoginRequiredMixin, generic.ListView):
         self.search_form = TeamTaskForm(self.request.GET, user=self.request.user)
         if self.search_form.is_valid():
             if self.search_form.cleaned_data["teams"]:
-                queryset = queryset.filter(project__team__in=self.search_form.cleaned_data["teams"])
+                queryset = queryset.filter(
+                    project__team__in=self.search_form.cleaned_data["teams"]
+                )
             if self.search_form.cleaned_data["name"]:
-                queryset = queryset.filter(name__icontains=self.search_form.cleaned_data["name"])
+                queryset = queryset.filter(
+                    name__icontains=self.search_form.cleaned_data["name"]
+                )
         return queryset
 
 
