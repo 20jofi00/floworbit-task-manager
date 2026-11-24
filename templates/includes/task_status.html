@@ -1,10 +1,9 @@
-
 {% if task.state == "blocked" %}
-  <span class="badge bg-danger">Blocked</span>
+  <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill">Blocked</span>
 {% elif task.state == "completed" %}
-  <span class="badge bg-success">Completed</span>
+  <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle rounded-pill">Completed</span>
 {% elif task.state == "in_progress" %}
-  <span class="badge bg-warning text-dark">In progress</span>
+  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill">In progress</span>
 {% else %}
-  <span class="badge bg-white text-dark border">Unassigned</span>
+  <span class="badge bg-white text-secondary border rounded-pill">Unassigned</span>
 {% endif %}
