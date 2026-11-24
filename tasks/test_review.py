@@ -249,3 +249,28 @@ class TaskReviewTests(TestCase):
         self.assertEqual(len(second_response.context["task_list"]), 7)
         self.assertEqual(len(small), len(large))
 
+
+    def test_admin_assignment_form_does_not_query_each_task(self):
+        self.make_task("First task")
+        self.make_task("Second task")
+        self.worker.is_staff = True
+        self.worker.is_superuser = True
+        self.worker.save(update_fields=["is_staff", "is_superuser"])
+        self.client.force_login(self.worker)
+        url = reverse("admin:tasks_taskassignment_add")
+
+        self.client.get(url)
+
+        with CaptureQueriesContext(connection) as small:
+            first = self.client.get(url)
+
+        for number in range(6):
+            self.make_task(f"Extra task {number}")
+
+        with CaptureQueriesContext(connection) as large:
+            second = self.client.get(url)
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertContains(second, "Extra task 5")
+        self.assertEqual(len(small), len(large))
