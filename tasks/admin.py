@@ -50,6 +50,11 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(TaskAssignment)
 class TaskAssignmentAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "task":
+            kwargs["queryset"] = Task.objects.select_related("task_type", "project")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     list_display = admin.ModelAdmin.list_display + ("task", "worker", "is_completed")
     actions = None
 
