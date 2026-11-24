@@ -1,36 +1,21 @@
-<div class="d-flex flex-column h-100 bg-dark text-white p-3">
-  <a
-    href="{% url 'teams:team-list' %}"
-    class="bg-primary text-white text-center text-decoration-none rounded p-3 mb-4 fs-4 fw-bold"
-  >
-    FlowOrbit
-  </a>
-
-  <p class="text-white-50 small mb-2">Workspace</p>
-
-  <a
-    href="{% url 'teams:team-list' %}"
-    class="btn btn-outline-light text-start mb-2"
-  >
-    Teams
-  </a>
-
-  <a
-    href="{% url 'tasks:my-task-list' %}"
-    class="btn btn-outline-light text-start mb-4"
-  >
-    My Tasks
-  </a>
-
-  <div class="mt-auto border-top pt-3">
-    <p class="small text-white-50 mb-1">Signed in as</p>
-    <p class="text-break">{{ user.get_username }}</p>
-
-    <form action="{% url 'logout' %}" method="post">
+<div class="d-flex flex-column gap-2 h-100 p-3 p-lg-4 text-white">
+  <a class="fs-4 fw-bold text-white text-decoration-none mb-3" href="{% url 'teams:team-list' %}">FlowOrbit<span class="text-primary">.</span></a>
+  <p class="small text-white-50 mb-1">WORKSPACE</p>
+  <a class="btn btn-outline-light border-0 text-start py-2" href="{% url 'teams:team-list' %}">Teams</a>
+  <a class="btn btn-outline-light border-0 text-start py-2 mb-3" href="{% url 'tasks:my-task-list' %}">My tasks</a>
+  {% if team %}
+    {% include "includes/team_navigation.html" with team_pk=team.pk %}
+  {% elif project %}
+    {% include "includes/team_navigation.html" with team_pk=project.team_id %}
+  {% elif task %}
+    {% include "includes/team_navigation.html" with team_pk=task.project.team_id %}
+  {% endif %}
+  <div class="mt-auto pt-4">
+    <p class="small text-white-50 border-top border-secondary pt-3 mb-1">Signed in as</p>
+    <p class="text-break fw-semibold">{{ user.username }}</p>
+    <form method="post" action="{% url 'logout' %}">
       {% csrf_token %}
-      <button class="btn btn-secondary w-100" type="submit">
-        Log out
-      </button>
+      <button type="submit" class="btn btn-secondary w-100">Log out</button>
     </form>
   </div>
 </div>
