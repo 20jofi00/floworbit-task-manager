@@ -102,42 +102,57 @@ class TaskReviewTests(TestCase):
 
 
     def test_personal_pagination_preserves_filters_and_completion_groups(self):
-        tasks = Task.objects.bulk_create([
-            Task(
-                name=f"Review task {number:02}",
-                project=self.project,
-                task_type=self.task_type,
-                deadline=self.today,
+        for number in range(21):
+            task = self.make_task(f"Review incomplete {number:02}")
+            TaskAssignment.objects.create(task=task, worker=self.worker)
+
+        for number in range(21):
+            task = self.make_task(f"Review completed {number:02}")
+            TaskAssignment.objects.create(
+                task=task,
+                worker=self.worker,
+                is_completed=True,
             )
-            for number in range(23)
-        ])
-        TaskAssignment.objects.bulk_create([
-            TaskAssignment(task=task, worker=self.worker, is_completed=number % 2 == 0)
-            for number, task in enumerate(tasks)
-        ])
-        self.make_task("Unassigned task")
+
+        unrelated_task = self.make_task("Unrelated task")
+        TaskAssignment.objects.create(task=unrelated_task, worker=self.worker)
+
         self.client.force_login(self.worker)
         url = reverse("tasks:my-task-list")
         filters = {"name": "Review", "teams": self.team.pk}
 
         first = self.client.get(url, filters)
-        second = self.client.get(url, {**filters, "page": 2})
-
         self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.context["incomplete_page"].paginator.count, 21)
+        self.assertEqual(first.context["completed_page"].paginator.count, 21)
+        self.assertEqual(len(first.context["incomplete_tasks"]), 20)
+        self.assertEqual(len(first.context["completed_tasks"]), 20)
+
+        second = self.client.get(url, {**filters, "incomplete_page": 2})
         self.assertEqual(second.status_code, 200)
-        self.assertEqual(first.context["paginator"].count, 23)
-        self.assertEqual(len(first.context["task_list"]), 20)
-        self.assertEqual(len(second.context["task_list"]), 3)
-        self.assertContains(first, f'name=Review&amp;teams={self.team.pk}&amp;page=2')
-        first_ids = {task.pk for task in first.context["task_list"]}
-        second_ids = {task.pk for task in second.context["task_list"]}
-        self.assertFalse(first_ids & second_ids)
-        self.assertEqual(len(first_ids | second_ids), 23)
-        for response in [first, second]:
-            for task in response.context["completed_tasks"]:
-                self.assertTrue(task.my_assignment_completed)
-            for task in response.context["incomplete_tasks"]:
-                self.assertFalse(task.my_assignment_completed)
+        self.assertEqual(len(second.context["incomplete_tasks"]), 1)
+        self.assertEqual(len(second.context["completed_tasks"]), 20)
+        self.assertEqual(second.context["completed_page"].number, 1)
+
+        next_url = (
+            f"?name=Review&teams={self.team.pk}"
+            "&incomplete_page=2&completed_page=2"
+        )
+        self.assertContains(
+            second,
+            f'<a href="{next_url}" class="page-link">next</a>',
+            html=True,
+        )
+
+        third = self.client.get(
+            url,
+            {**filters, "incomplete_page": 2, "completed_page": 2},
+        )
+        self.assertEqual(third.status_code, 200)
+        self.assertEqual(len(third.context["incomplete_tasks"]), 1)
+        self.assertEqual(len(third.context["completed_tasks"]), 1)
+        self.assertFalse(third.context["incomplete_tasks"][0].my_assignment_completed)
+        self.assertTrue(third.context["completed_tasks"][0].my_assignment_completed)
 
 
     def test_board_pagination_groups_only_current_page_tasks(self):
