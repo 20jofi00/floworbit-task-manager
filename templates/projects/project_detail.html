@@ -44,7 +44,7 @@
     </a>
   </div>
 
-  <div class="bg-white border rounded p-4 mb-4">
+  <div class="bg-white border rounded-4 shadow-sm p-4 mb-4">
     <h2 class="h5 mb-3">Description</h2>
     <p class="text-secondary text-break mb-0">
       {{ project.description|default:"No description yet." }}
@@ -54,17 +54,17 @@
   <h2 class="h4 mb-3">Progress</h2>
 
   <div class="d-flex flex-wrap gap-3 mb-4">
-    <div class="bg-white border rounded text-center flex-grow-1 p-4">
+    <div class="bg-white border rounded-4 shadow-sm text-center flex-grow-1 p-4">
       <p class="h2 fw-bold mb-1">{{ num_tasks }}</p>
       <p class="text-secondary mb-0">Total tasks</p>
     </div>
 
-    <div class="bg-white border border-success rounded text-center flex-grow-1 p-4">
+    <div class="bg-white border border-success rounded-4 shadow-sm text-center flex-grow-1 p-4">
       <p class="h2 fw-bold text-success mb-1">{{ num_completed_tasks }}</p>
       <p class="text-secondary mb-0">Completed tasks</p>
     </div>
 
-    <div class="bg-white border rounded text-center flex-grow-1 p-4">
+    <div class="bg-white border rounded-4 shadow-sm text-center flex-grow-1 p-4">
       <p class="h2 fw-bold mb-1">{{ percent_of_completed_tasks }}%</p>
       <p class="text-secondary mb-0">Progress</p>
     </div>
