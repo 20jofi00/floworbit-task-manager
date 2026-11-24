@@ -8,7 +8,7 @@
     Your assignments across your teams.
   </p>
 
-  <form method="get" class="bg-white border rounded p-4 mb-4">
+  <form method="get" class="bg-white border rounded-4 shadow-sm p-4 mb-4">
     {{ search_form|crispy }}
 
     <button type="submit" class="btn btn-primary">
@@ -31,7 +31,7 @@
 
   {% include "includes/pagination.html" with page_obj=incomplete_page paginator=incomplete_page.paginator is_paginated=incomplete_page.has_other_pages page_parameter="incomplete_page" %}
 
-  <h2 class="h4 mb-3">My completed assignments</h2>
+  <h2 class="h4 mt-4 mb-3">My completed assignments</h2>
   <p class="small text-secondary">
     Showing {{ completed_page.start_index }}–{{ completed_page.end_index }} of {{ completed_page.paginator.count }} assignments.
   </p>
