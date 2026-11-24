@@ -75,6 +75,11 @@ class TaskAssignmentAdmin(admin.ModelAdmin):
 
 @admin.register(TaskDependency)
 class TaskDependencyAdmin(admin.ModelAdmin):
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name in ("dependent_task", "prerequisite_task"):
+            kwargs["queryset"] = Task.objects.select_related("task_type", "project")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     list_display = admin.ModelAdmin.list_display + (
         "dependent_task",
         "prerequisite_task",
