@@ -1,0 +1,5 @@
+<p class="small text-white-50 mb-1">CURRENT TEAM</p>
+<a class="btn btn-outline-light border-0 text-start" href="{% url 'teams:team-dashboard' pk=team_pk %}">Dashboard</a>
+<a class="btn btn-outline-light border-0 text-start" href="{% url 'projects:project-list' team_pk=team_pk %}">Projects</a>
+<a class="btn btn-outline-light border-0 text-start" href="{% url 'tasks:task-list' team_pk=team_pk %}">Team tasks</a>
+<a class="btn btn-outline-light border-0 text-start mb-3" href="{% url 'teams:team-workload' pk=team_pk %}">Workload</a>
