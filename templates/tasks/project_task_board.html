@@ -24,24 +24,44 @@
   {% include "includes/task_page_summary.html" %}
 
   <div class="row g-3 mb-4">
-    <div class="col-12 col-md-6 col-xxl-3">
-      <h2 class="h5 mb-3">Unassigned</h2>
+    <div class="col-12 col-lg-6 col-xxl-3">
+      <div class="bg-body-secondary rounded-4 p-3 h-100">
+        <h2 class="h6 d-flex justify-content-between align-items-center gap-2 mb-3">
+          <span>Unassigned</span>
+          <span class="badge text-bg-secondary rounded-pill">{{ unassigned_tasks|length }}</span>
+        </h2>
       {% include "includes/task_card.html" with tasks=unassigned_tasks empty_message="No unassigned tasks." %}
+      </div>
     </div>
 
-    <div class="col-12 col-md-6 col-xxl-3">
-      <h2 class="h5 mb-3">In progress</h2>
+    <div class="col-12 col-lg-6 col-xxl-3">
+      <div class="bg-body-secondary rounded-4 p-3 h-100">
+        <h2 class="h6 d-flex justify-content-between align-items-center gap-2 mb-3">
+          <span>In progress</span>
+          <span class="badge text-bg-warning rounded-pill">{{ tasks_in_progress|length }}</span>
+        </h2>
       {% include "includes/task_card.html" with tasks=tasks_in_progress empty_message="No tasks in progress." %}
+      </div>
     </div>
 
-    <div class="col-12 col-md-6 col-xxl-3">
-      <h2 class="h5 mb-3">Blocked</h2>
+    <div class="col-12 col-lg-6 col-xxl-3">
+      <div class="bg-body-secondary rounded-4 p-3 h-100">
+        <h2 class="h6 d-flex justify-content-between align-items-center gap-2 mb-3">
+          <span>Blocked</span>
+          <span class="badge text-bg-danger rounded-pill">{{ blocked_tasks|length }}</span>
+        </h2>
       {% include "includes/task_card.html" with tasks=blocked_tasks empty_message="No blocked tasks." %}
+      </div>
     </div>
 
-    <div class="col-12 col-md-6 col-xxl-3">
-      <h2 class="h5 mb-3">Completed</h2>
+    <div class="col-12 col-lg-6 col-xxl-3">
+      <div class="bg-body-secondary rounded-4 p-3 h-100">
+        <h2 class="h6 d-flex justify-content-between align-items-center gap-2 mb-3">
+          <span>Completed</span>
+          <span class="badge text-bg-success rounded-pill">{{ completed_tasks|length }}</span>
+        </h2>
       {% include "includes/task_card.html" with tasks=completed_tasks empty_message="No completed tasks." %}
+      </div>
     </div>
   </div>
 
