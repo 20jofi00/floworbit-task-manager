@@ -13,3 +13,8 @@ def query_transform(request: HttpRequest, **kwargs):
         else:
             updated.pop(key, 0)
     return updated.urlencode()
+
+@register.simple_tag
+def pagination_query(request, page_number, page_parameter="page"):
+    return query_transform(request, **{page_parameter: page_number})
+
