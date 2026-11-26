@@ -203,3 +203,14 @@ Project boards show 40 tasks per page. Calendars show up to 100 tasks from
 the selected month per page. Board columns and calendar cells contain only
 the tasks on the current page. Pagination preserves the relevant filters
 and selected calendar month.
+
+## Live demo
+
+Visit [FlowOrbit](https://floworbit.onrender.com).
+
+Demo account:
+
+- Username: `alex.morgan`
+- Password: `OrbitDemo!2026`
+
+The demo runs on Render's free plan, so the first visit after inactivity may take about a minute to load.
