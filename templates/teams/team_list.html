@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+{% block title %}<title>Teams</title>{% endblock %}
+{% block content %}
+  <div class="bg-primary-subtle rounded-4 p-4 p-lg-5 mb-4">
+    <span class="badge bg-white text-primary rounded-pill px-3 py-2 mb-3">FlowOrbit workspace</span>
+    <h1 class="display-5 fw-bold text-primary-emphasis mb-3">Good teams.<br>Great progress.</h1>
+    <p class="text-primary-emphasis mb-4">Your people, projects and next steps — all in one place.</p>
+    <a class="btn btn-primary px-4" href="{% url 'tasks:my-task-list' %}">View my tasks</a>
+  </div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="h4 fw-bold mb-0">Your teams</h2>
+    <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ paginator.count }} teams</span>
+  </div>
+  <form method="get" class="bg-white border rounded-4 shadow-sm p-3 mb-4">
+    {{ search_form|crispy }}
+    <button class="btn btn-primary" type="submit">Search</button>
+    {% if request.GET.name %}
+      <a class="btn btn-outline-secondary" href="{% url 'teams:team-list' %}">Clear</a>
+    {% endif %}
+  </form>
+  <div class="row g-3">
+    {% for team in team_list %}
+      <div class="col-12 col-lg-6 col-xxl-4">
+        <div class="card h-100 border-0 rounded-4 shadow-sm p-4">
+          <span class="badge bg-primary-subtle text-primary-emphasis align-self-start rounded-3 fs-5 px-3 py-2 mb-4">{{ team.name|first|upper }}</span>
+          <h3 class="h5 fw-bold text-break">
+            <a class="stretched-link text-dark text-decoration-none" href="{% url 'teams:team-detail' pk=team.id %}">{{ team.name }}</a>
+          </h3>
+          <p class="text-secondary small text-break mb-4">{{ team.description|default:"Your shared space for projects and tasks." }}</p>
+          <p class="small text-primary border-top pt-3 mt-auto mb-0">Open workspace &rarr;</p>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <p class="bg-white border rounded-4 p-4 text-secondary mb-0">
+          {% if request.GET.name %}
+            No teams match your search.
+          {% else %}
+            You haven't joined a team yet.
+          {% endif %}
+        </p>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

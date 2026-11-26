@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load crispy_forms_filters %}
+{% block title %}<title>My tasks</title>{% endblock %}
+
+{% block content %}
+  <h1 class="mb-2">My tasks</h1>
+  <p class="text-secondary mb-4">
+    Your assignments across your teams.
+  </p>
+
+  <form method="get" class="bg-white border rounded-4 shadow-sm p-4 mb-4">
+    {{ search_form|crispy }}
+
+    <button type="submit" class="btn btn-primary">
+      Search
+    </button>
+
+    <a
+      href="{% url 'tasks:my-task-list' %}"
+      class="btn btn-outline-secondary"
+    >
+      Clear
+    </a>
+  </form>
+
+  <h2 class="h4 mb-3">My incomplete assignments</h2>
+  <p class="small text-secondary">
+    Showing {{ incomplete_page.start_index }}–{{ incomplete_page.end_index }} of {{ incomplete_page.paginator.count }} assignments.
+  </p>
+  {% include "includes/task_table.html" with tasks=incomplete_tasks empty_message="You have no incomplete assignments." %}
+
+  {% include "includes/pagination.html" with page_obj=incomplete_page paginator=incomplete_page.paginator is_paginated=incomplete_page.has_other_pages page_parameter="incomplete_page" %}
+
+  <h2 class="h4 mt-4 mb-3">My completed assignments</h2>
+  <p class="small text-secondary">
+    Showing {{ completed_page.start_index }}–{{ completed_page.end_index }} of {{ completed_page.paginator.count }} assignments.
+  </p>
+  {% include "includes/task_table.html" with tasks=completed_tasks empty_message="You have no completed assignments yet." %}
+  {% include "includes/pagination.html" with page_obj=completed_page paginator=completed_page.paginator is_paginated=completed_page.has_other_pages page_parameter="completed_page" %}
+{% endblock %}

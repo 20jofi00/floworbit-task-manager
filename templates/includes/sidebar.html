@@ -1,0 +1,21 @@
+<div class="d-flex flex-column gap-2 h-100 p-3 p-lg-4 text-white">
+  <a class="fs-4 fw-bold text-white text-decoration-none mb-3" href="{% url 'teams:team-list' %}">FlowOrbit<span class="text-primary">.</span></a>
+  <p class="small text-white-50 mb-1">WORKSPACE</p>
+  <a class="btn btn-outline-light border-0 text-start py-2" href="{% url 'teams:team-list' %}">Teams</a>
+  <a class="btn btn-outline-light border-0 text-start py-2 mb-3" href="{% url 'tasks:my-task-list' %}">My tasks</a>
+  {% if team %}
+    {% include "includes/team_navigation.html" with team_pk=team.pk %}
+  {% elif project %}
+    {% include "includes/team_navigation.html" with team_pk=project.team_id %}
+  {% elif task %}
+    {% include "includes/team_navigation.html" with team_pk=task.project.team_id %}
+  {% endif %}
+  <div class="mt-auto pt-4">
+    <p class="small text-white-50 border-top border-secondary pt-3 mb-1">Signed in as</p>
+    <p class="text-break fw-semibold">{{ user.username }}</p>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-secondary w-100">Log out</button>
+    </form>
+  </div>
+</div>

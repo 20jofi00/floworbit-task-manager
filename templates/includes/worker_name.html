@@ -1,0 +1,7 @@
+{% if worker.get_full_name %}
+  {{ worker.get_full_name }}
+{% elif worker.username %}
+  {{ worker.username }}
+{% else %}
+  Unknown member
+{% endif %}

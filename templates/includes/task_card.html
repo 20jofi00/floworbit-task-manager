@@ -1,0 +1,21 @@
+{% for task in tasks %}
+  <div class="bg-white border-start border-4 rounded-3 shadow-sm p-3 mb-3 text-break
+  {% if task.state == "blocked" %}
+    border-danger
+  {% elif task.state == "completed" %}
+    border-success
+  {% elif task.state == "in_progress" %}
+    border-warning
+  {% else %}
+    border-white
+  {% endif %}">
+    <p class="small text-secondary mb-2">Task #{{ task.pk }}</p>
+    <a class="d-block fw-semibold text-dark text-decoration-none mb-3" href="{% url 'tasks:task-detail' team_pk=task.project.team.id pk=task.id %}">{{ task.name }}</a>
+    <p class="small text-secondary mb-3">{{ task.deadline|date:"d M Y" }} · {{ task.get_priority_display }}</p>
+    {% include "includes/task_status.html" %}
+  </div>
+{% empty %}
+  {% if empty_message %}
+    <p class="small text-secondary mb-0">{{ empty_message }}</p>
+  {% endif %}
+{% endfor %}
