@@ -44,7 +44,7 @@ A newly registered worker does not belong to a team automatically. An administra
 
 ## Technologies
 
-The project uses Python, Django, SQLite, and Bootstrap 5.
+The project uses Python, Django, PostgreSQL in production, SQLite for local development, and Bootstrap 5.
 
 Forms are displayed using django-crispy-forms and crispy-bootstrap5. Environment variables are loaded with python-dotenv. Dependencies are managed with uv.
 
